@@ -1223,10 +1223,11 @@ describe Patient do
             )
           end
 
-          it "updates the existing archive reason" do
+          it "creates a new archive reason" do
             expect(archive_reason).to be_moved_out_of_area
-            expect { update_from_pds! }.not_to change(ArchiveReason, :count)
-            expect(archive_reason.reload).to be_deceased
+            expect { update_from_pds! }.to change(ArchiveReason, :count).by(1)
+            expect(archive_reason.reload).to be_moved_out_of_area
+            expect(ArchiveReason.last).to be_deceased
           end
         end
       end
