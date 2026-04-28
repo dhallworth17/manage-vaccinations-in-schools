@@ -14,7 +14,7 @@ class PatientSearchForm < SearchForm
   attribute :programme_status_group, :string
   attribute :programme_statuses, array: true
   attribute :programme_types, array: true
-  attribute :q, :string
+  attribute :query, :string
   attribute :registration_status, :string
   attribute :vaccine_criteria, array: true
   attribute :year_groups, array: true
@@ -132,7 +132,7 @@ class PatientSearchForm < SearchForm
   end
 
   def filter_name(scope)
-    q.present? ? scope.search_by_name_or_nhs_number(q) : scope
+    query.present? ? scope.search_by_name_or_nhs_number(query) : scope
   end
 
   def filter_nhs_number(scope)
