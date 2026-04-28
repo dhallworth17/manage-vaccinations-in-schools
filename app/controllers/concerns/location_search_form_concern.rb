@@ -5,6 +5,8 @@ module LocationSearchFormConcern
 
   include Pagy::Backend
 
+  included { include SearchQueryRedirectConcern }
+
   def set_location_search_form
     @form =
       LocationSearchForm.new(

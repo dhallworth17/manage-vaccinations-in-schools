@@ -3,6 +3,7 @@
 class DraftVaccinationRecordsController < ApplicationController
   include Pagy::Backend
   include TodaysBatchConcern
+  include SearchQueryRedirectConcern
 
   skip_after_action :verify_policy_scoped
 

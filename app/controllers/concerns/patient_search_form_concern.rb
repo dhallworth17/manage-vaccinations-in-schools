@@ -5,6 +5,8 @@ module PatientSearchFormConcern
 
   include Pagy::Backend
 
+  included { include SearchQueryRedirectConcern }
+
   def set_patient_search_form
     @form =
       PatientSearchForm.new(

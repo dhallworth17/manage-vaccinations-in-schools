@@ -5,6 +5,8 @@ module SessionSearchFormConcern
 
   include Pagy::Backend
 
+  included { include SearchQueryRedirectConcern }
+
   def set_session_search_form
     @form =
       SessionSearchForm.new(
