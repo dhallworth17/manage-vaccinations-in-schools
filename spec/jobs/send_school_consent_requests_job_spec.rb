@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 describe SendSchoolConsentRequestsJob do
-  subject(:perform_now) { described_class.perform_now(session) }
+  subject(:perform) { described_class.new.perform(session.id) }
 
   let(:today) { Date.new(2025, 7, 1) }
   let(:programmes) { [Programme.sample] }
@@ -67,7 +67,7 @@ describe SendSchoolConsentRequestsJob do
     let(:session) { create(:session, :unscheduled, programmes:) }
 
     it "doesn't send any notifications" do
-      expect { perform_now }.not_to change(ConsentNotification, :count)
+      expect { perform }.not_to change(ConsentNotification, :count)
     end
   end
 
@@ -82,7 +82,7 @@ describe SendSchoolConsentRequestsJob do
     end
 
     it "sends notifications to expected patients" do
-      expect { perform_now }.to change(ConsentNotification, :count).by(2)
+      expect { perform }.to change(ConsentNotification, :count).by(2)
       expect(
         ConsentNotification.order(:sent_at).last(2).map(&:patient_id)
       ).to contain_exactly(
@@ -95,7 +95,7 @@ describe SendSchoolConsentRequestsJob do
       let(:programmes) { [Programme.menacwy, Programme.td_ipv] }
 
       it "sends one notification to one patient" do
-        expect { perform_now }.to change(ConsentNotification, :count).by(2)
+        expect { perform }.to change(ConsentNotification, :count).by(2)
         expect(
           ConsentNotification.order(:sent_at).last(2).map(&:patient_id)
         ).to contain_exactly(
@@ -120,7 +120,7 @@ describe SendSchoolConsentRequestsJob do
         before { PatientStatusUpdater.call(patient: patient_not_sent_request) }
 
         it "sends only notifications for HPV" do
-          expect { perform_now }.to change(ConsentNotification, :count).by(3)
+          expect { perform }.to change(ConsentNotification, :count).by(3)
           expect(
             ConsentNotification.find_by!(
               patient: patient_not_sent_request
@@ -137,7 +137,7 @@ describe SendSchoolConsentRequestsJob do
         before { PatientStatusUpdater.call(patient: patient_not_sent_request) }
 
         it "sends notifications for HPV, and MenACWY and Td/IPV separately" do
-          expect { perform_now }.to change(ConsentNotification, :count).by(4)
+          expect { perform }.to change(ConsentNotification, :count).by(4)
           expect(
             ConsentNotification.where(patient: patient_not_sent_request).map(
               &:programme_types
@@ -153,7 +153,7 @@ describe SendSchoolConsentRequestsJob do
       let(:session) { create(:session, programmes:, team:) }
 
       it "doesn't send any notifications" do
-        expect { perform_now }.not_to change(ConsentNotification, :count)
+        expect { perform }.not_to change(ConsentNotification, :count)
       end
     end
   end

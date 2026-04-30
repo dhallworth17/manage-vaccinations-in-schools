@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 describe SendSchoolSessionRemindersJob do
-  subject(:perform_now) { described_class.perform_now(session) }
+  subject(:perform) { described_class.new.perform(session.id) }
 
   let(:team) { create(:team, programmes:) }
   let(:session) { create(:session, :tomorrow, programmes:, team:) }
@@ -20,7 +20,7 @@ describe SendSchoolSessionRemindersJob do
       session_date: Date.tomorrow,
       type: :school_reminder
     )
-    perform_now
+    perform
   end
 
   context "when triaged for vaccination" do
@@ -40,7 +40,7 @@ describe SendSchoolSessionRemindersJob do
         session_date: Date.tomorrow,
         type: :school_reminder
       )
-      perform_now
+      perform
     end
   end
 
@@ -49,7 +49,7 @@ describe SendSchoolSessionRemindersJob do
 
     it "doesn't send any notifications" do
       expect(SessionNotification).not_to receive(:create_and_send!)
-      perform_now
+      perform
     end
   end
 
@@ -60,7 +60,7 @@ describe SendSchoolSessionRemindersJob do
 
     it "doesn't send any notifications" do
       expect(SessionNotification).not_to receive(:create_and_send!)
-      perform_now
+      perform
     end
   end
 
@@ -72,7 +72,7 @@ describe SendSchoolSessionRemindersJob do
 
     it "doesn't send any notifications" do
       expect(SessionNotification).not_to receive(:create_and_send!)
-      perform_now
+      perform
     end
   end
 
@@ -81,7 +81,7 @@ describe SendSchoolSessionRemindersJob do
 
     it "doesn't send any notifications" do
       expect(SessionNotification).not_to receive(:create_and_send!)
-      perform_now
+      perform
     end
   end
 
@@ -90,7 +90,7 @@ describe SendSchoolSessionRemindersJob do
 
     it "doesn't send any notifications" do
       expect(SessionNotification).not_to receive(:create_and_send!)
-      perform_now
+      perform
     end
   end
 
@@ -99,7 +99,7 @@ describe SendSchoolSessionRemindersJob do
 
     it "doesn't send any notifications" do
       expect(SessionNotification).not_to receive(:create_and_send!)
-      perform_now
+      perform
     end
   end
 
@@ -108,7 +108,7 @@ describe SendSchoolSessionRemindersJob do
 
     it "doesn't send any notifications" do
       expect(SessionNotification).not_to receive(:create_and_send!)
-      perform_now
+      perform
     end
   end
 end

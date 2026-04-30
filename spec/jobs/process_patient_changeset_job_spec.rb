@@ -33,15 +33,15 @@ describe ProcessPatientChangesetJob, :pds do
       before { patient_changeset.processed! }
 
       it "does nothing" do
-        expect { described_class.perform_now(patient_changeset.id) }.not_to(
+        expect { described_class.new.perform(patient_changeset.id) }.not_to(
           change { patient_changeset.reload.updated_at }
         )
       end
 
       it "does not enqueue ReviewPatientChangesetJob" do
         expect {
-          described_class.perform_now(patient_changeset.id)
-        }.not_to enqueue_sidekiq_job(ReviewPatientChangesetSidekiqJob)
+          described_class.new.perform(patient_changeset.id)
+        }.not_to enqueue_sidekiq_job(ReviewPatientChangesetJob)
       end
     end
 
@@ -64,7 +64,7 @@ describe ProcessPatientChangesetJob, :pds do
       end
 
       it "saves the NHS number to child_attributes" do
-        described_class.perform_now(patient_changeset.id)
+        described_class.new.perform(patient_changeset.id)
 
         expect(patient_changeset.reload.child_attributes["nhs_number"]).to eq(
           "9449306168"
@@ -72,13 +72,13 @@ describe ProcessPatientChangesetJob, :pds do
       end
 
       it "saves the NHS number to pds_nhs_number" do
-        described_class.perform_now(patient_changeset.id)
+        described_class.new.perform(patient_changeset.id)
 
         expect(patient_changeset.reload.pds_nhs_number).to eq("9449306168")
       end
 
       it "marks changeset as calculating_review" do
-        described_class.perform_now(patient_changeset.id)
+        described_class.new.perform(patient_changeset.id)
 
         expect(patient_changeset.reload).to be_calculating_review
       end
@@ -103,7 +103,7 @@ describe ProcessPatientChangesetJob, :pds do
       end
 
       it "does not save any NHS number" do
-        described_class.perform_now(patient_changeset.id)
+        described_class.new.perform(patient_changeset.id)
 
         expect(
           patient_changeset.reload.child_attributes["nhs_number"]
@@ -112,7 +112,7 @@ describe ProcessPatientChangesetJob, :pds do
       end
 
       it "marks changeset as calculating_review" do
-        described_class.perform_now(patient_changeset.id)
+        described_class.new.perform(patient_changeset.id)
 
         expect(patient_changeset.reload).to be_calculating_review
       end
@@ -137,7 +137,7 @@ describe ProcessPatientChangesetJob, :pds do
       end
 
       it "does not save any NHS number" do
-        described_class.perform_now(patient_changeset.id)
+        described_class.new.perform(patient_changeset.id)
 
         expect(
           patient_changeset.reload.child_attributes["nhs_number"]
@@ -146,7 +146,7 @@ describe ProcessPatientChangesetJob, :pds do
       end
 
       it "marks changeset as calculating_review" do
-        described_class.perform_now(patient_changeset.id)
+        described_class.new.perform(patient_changeset.id)
 
         expect(patient_changeset.reload).to be_calculating_review
       end
@@ -178,7 +178,7 @@ describe ProcessPatientChangesetJob, :pds do
 
         context "when pds_search_during_import flag is disabled" do
           it "doesn't change import status" do
-            described_class.perform_now(patient_changeset.id)
+            described_class.new.perform(patient_changeset.id)
             expect(import.reload.status).to eq("pending_import")
           end
         end
@@ -187,12 +187,12 @@ describe ProcessPatientChangesetJob, :pds do
           before { Flipper.enable(:pds_search_during_import) }
 
           it "marks import as low_pds_match_rate and stops" do
-            described_class.perform_now(patient_changeset.id)
+            described_class.new.perform(patient_changeset.id)
             expect(import.reload.status).to eq("low_pds_match_rate")
           end
 
           it "updates changesets to import_invalid and stops" do
-            described_class.perform_now(patient_changeset.id)
+            described_class.new.perform(patient_changeset.id)
             expect(import.changesets.pluck(:status).uniq).to eq(
               ["import_invalid"]
             )
@@ -200,8 +200,8 @@ describe ProcessPatientChangesetJob, :pds do
 
           it "doesn't enqueue ReviewPatientChangesetJob" do
             expect {
-              described_class.perform_now(patient_changeset.id)
-            }.not_to enqueue_sidekiq_job(ReviewPatientChangesetSidekiqJob)
+              described_class.new.perform(patient_changeset.id)
+            }.not_to enqueue_sidekiq_job(ReviewPatientChangesetJob)
           end
         end
       end
@@ -241,7 +241,7 @@ describe ProcessPatientChangesetJob, :pds do
           it "enqueues ReviewPatientChangesetJob" do
             expect {
               described_class.new.perform(patient_changeset.id)
-            }.to enqueue_sidekiq_job(ReviewPatientChangesetSidekiqJob).with(
+            }.to enqueue_sidekiq_job(ReviewPatientChangesetJob).with(
               patient_changeset.id
             )
           end
@@ -272,19 +272,19 @@ describe ProcessPatientChangesetJob, :pds do
           end
 
           it "marks import as changesets_are_invalid" do
-            described_class.perform_now(patient_changeset.id)
+            described_class.new.perform(patient_changeset.id)
             expect(import.reload.status).to eq("changesets_are_invalid")
           end
 
           it "adds duplicate NHS number error to import" do
-            described_class.perform_now(patient_changeset.id)
+            described_class.new.perform(patient_changeset.id)
             expect(import.reload.serialized_errors.values.flatten).to include(
               /The details on this row match row \d+\. Mavis has found the NHS number 1111111111\./
             )
           end
 
           it "updates the status of changesets to import_invalid" do
-            described_class.perform_now(patient_changeset.id)
+            described_class.new.perform(patient_changeset.id)
             expect(import.changesets.pluck(:status).uniq).to eq(
               ["import_invalid"]
             )
@@ -316,12 +316,12 @@ describe ProcessPatientChangesetJob, :pds do
           end
 
           it "marks import as changesets_are_invalid" do
-            described_class.perform_now(patient_changeset.id)
+            described_class.new.perform(patient_changeset.id)
             expect(import.reload.status).to eq("changesets_are_invalid")
           end
 
           it "adds duplicate patient error to import" do
-            described_class.perform_now(patient_changeset.id)
+            described_class.new.perform(patient_changeset.id)
             import.load_serialized_errors!
             expect(import.reload.serialized_errors.values.flatten).to include(
               /The record on this row appears to be a duplicate of row \d+./
@@ -329,7 +329,7 @@ describe ProcessPatientChangesetJob, :pds do
           end
 
           it "updates the status of changesets to import_invalid" do
-            described_class.perform_now(patient_changeset.id)
+            described_class.new.perform(patient_changeset.id)
             expect(import.changesets.pluck(:status).uniq).to eq(
               ["import_invalid"]
             )
@@ -361,12 +361,12 @@ describe ProcessPatientChangesetJob, :pds do
           end
 
           it "marks import as changesets_are_invalid" do
-            described_class.perform_now(patient_changeset.id)
+            described_class.new.perform(patient_changeset.id)
             expect(import.reload.status).to eq("changesets_are_invalid")
           end
 
           it "adds both duplicate NHS number and duplicate patient errors to import" do
-            described_class.perform_now(patient_changeset.id)
+            described_class.new.perform(patient_changeset.id)
             import.load_serialized_errors!
             expect(import.reload.serialized_errors.values.flatten).to include(
               /The details on this row match row \d+\. Mavis has found the NHS number 1111111111\./,
@@ -375,7 +375,7 @@ describe ProcessPatientChangesetJob, :pds do
           end
 
           it "updates the status of changesets to import_invalid" do
-            described_class.perform_now(patient_changeset.id)
+            described_class.new.perform(patient_changeset.id)
             expect(import.changesets.pluck(:status).uniq).to eq(
               ["import_invalid"]
             )
@@ -403,8 +403,8 @@ describe ProcessPatientChangesetJob, :pds do
 
       it "enqueues ReviewPatientChangesetJob" do
         expect {
-          described_class.perform_now(patient_changeset.id)
-        }.to enqueue_sidekiq_job(ReviewPatientChangesetSidekiqJob).with(
+          described_class.new.perform(patient_changeset.id)
+        }.to enqueue_sidekiq_job(ReviewPatientChangesetJob).with(
           patient_changeset.id
         )
       end
@@ -412,7 +412,7 @@ describe ProcessPatientChangesetJob, :pds do
       it "does not validate PDS match rate or uniqueness" do
         expect(import).not_to receive(:validate_pds_match_rate!)
         expect(import).not_to receive(:validate_changeset_uniqueness!)
-        described_class.perform_now(patient_changeset.id)
+        described_class.new.perform(patient_changeset.id)
       end
     end
 
@@ -429,7 +429,7 @@ describe ProcessPatientChangesetJob, :pds do
       end
 
       it "processes the changeset correctly" do
-        described_class.perform_now(patient_changeset.id)
+        described_class.new.perform(patient_changeset.id)
 
         expect(patient_changeset.reload).to be_calculating_review
         expect(patient_changeset.child_attributes["nhs_number"]).to eq(

@@ -39,8 +39,13 @@ describe PDSCascadingSearchJob do
 
     it "saves the search result and enqueues ProcessPatientChangesetJob" do
       expect {
-        described_class.perform_now(patient_changeset)
-      }.to enqueue_sidekiq_job(ProcessPatientChangesetSidekiqJob).with(
+        described_class.new.perform(
+          patient_changeset.to_global_id.to_s,
+          nil,
+          nil,
+          nil
+        )
+      }.to enqueue_sidekiq_job(ProcessPatientChangesetJob).with(
         patient_changeset.id
       )
 
@@ -60,11 +65,13 @@ describe PDSCascadingSearchJob do
 
     it "enqueues next search step on no match" do
       expect {
-        described_class.perform_now(
-          patient_changeset,
-          step_name: "no_fuzzy_with_history"
+        described_class.new.perform(
+          patient_changeset.to_global_id.to_s,
+          "no_fuzzy_with_history",
+          nil,
+          nil
         )
-      }.to enqueue_sidekiq_job(PDSCascadingSearchSidekiqJob).with(
+      }.to enqueue_sidekiq_job(described_class).with(
         patient_changeset.to_global_id.to_s,
         "no_fuzzy_with_wildcard_postcode",
         [
@@ -101,8 +108,13 @@ describe PDSCascadingSearchJob do
 
     it "records no_postcode result and enqueues ProcessPatientChangesetJob" do
       expect {
-        described_class.perform_now(patient_changeset)
-      }.to enqueue_sidekiq_job(ProcessPatientChangesetSidekiqJob).with(
+        described_class.new.perform(
+          patient_changeset.to_global_id.to_s,
+          nil,
+          nil,
+          nil
+        )
+      }.to enqueue_sidekiq_job(ProcessPatientChangesetJob).with(
         patient_changeset.id
       )
 
@@ -137,10 +149,15 @@ describe PDSCascadingSearchJob do
     before { allow(PDS::Patient).to receive(:search).and_return(nil) }
 
     it "skips wildcard name steps and completes search" do
-      described_class.perform_now(patient_changeset)
+      described_class.new.perform(
+        patient_changeset.to_global_id.to_s,
+        nil,
+        nil,
+        nil
+      )
 
-      perform_enqueued_jobs_while_exists(PDSCascadingSearchSidekiqJob)
-      ProcessPatientChangesetSidekiqJob.drain
+      perform_enqueued_jobs_while_exists(described_class)
+      ProcessPatientChangesetJob.drain
 
       patient_changeset.reload
 
@@ -158,9 +175,11 @@ describe PDSCascadingSearchJob do
     it "stops cascading and enqueues ProcessPatientChangesetJob" do
       allow(PDS::Patient).to receive(:search).and_return(mock_patient)
 
-      described_class.perform_now(
-        patient_changeset,
-        step_name: "no_fuzzy_with_history"
+      described_class.new.perform(
+        patient_changeset.to_global_id.to_s,
+        "no_fuzzy_with_history",
+        nil,
+        nil
       )
 
       patient_changeset.reload
@@ -173,12 +192,13 @@ describe PDSCascadingSearchJob do
       patient_changeset.save!
 
       expect {
-        described_class.perform_now(
-          patient_changeset,
-          step_name: "no_fuzzy_with_wildcard_given_name",
-          search_results: patient_changeset.search_results
+        described_class.new.perform(
+          patient_changeset.to_global_id.to_s,
+          "no_fuzzy_with_wildcard_given_name",
+          patient_changeset.search_results,
+          nil
         )
-      }.to enqueue_sidekiq_job(ProcessPatientChangesetSidekiqJob).with(
+      }.to enqueue_sidekiq_job(ProcessPatientChangesetJob).with(
         patient_changeset.id
       )
     end
@@ -195,8 +215,13 @@ describe PDSCascadingSearchJob do
       expect(Sentry).to receive(:capture_exception)
 
       expect {
-        described_class.perform_now(patient_changeset)
-      }.to enqueue_sidekiq_job(ProcessPatientChangesetSidekiqJob).with(
+        described_class.new.perform(
+          patient_changeset.to_global_id.to_s,
+          nil,
+          nil,
+          nil
+        )
+      }.to enqueue_sidekiq_job(ProcessPatientChangesetJob).with(
         patient_changeset.id
       )
 
@@ -220,8 +245,13 @@ describe PDSCascadingSearchJob do
       expect(Sentry).to receive(:capture_exception)
 
       expect {
-        described_class.perform_now(patient_changeset)
-      }.to enqueue_sidekiq_job(ProcessPatientChangesetSidekiqJob).with(
+        described_class.new.perform(
+          patient_changeset.to_global_id.to_s,
+          nil,
+          nil,
+          nil
+        )
+      }.to enqueue_sidekiq_job(ProcessPatientChangesetJob).with(
         patient_changeset.id
       )
 
@@ -243,8 +273,13 @@ describe PDSCascadingSearchJob do
 
     it "enqueues next step (no_fuzzy_without_history)" do
       expect {
-        described_class.perform_now(patient_changeset)
-      }.to enqueue_sidekiq_job(PDSCascadingSearchSidekiqJob).with(
+        described_class.new.perform(
+          patient_changeset.to_global_id.to_s,
+          nil,
+          nil,
+          nil
+        )
+      }.to enqueue_sidekiq_job(described_class).with(
         patient_changeset.to_global_id.to_s,
         "no_fuzzy_without_history",
         [
@@ -268,17 +303,21 @@ describe PDSCascadingSearchJob do
     end
 
     it "stops cascading and enqueues ProcessPatientChangesetJob" do
-      described_class.perform_now(
-        patient_changeset,
-        step_name: "no_fuzzy_with_history"
+      described_class.new.perform(
+        patient_changeset.to_global_id.to_s,
+        "no_fuzzy_with_history",
+        nil,
+        nil
       )
 
       expect {
-        described_class.perform_now(
-          patient_changeset,
-          step_name: "no_fuzzy_without_history"
+        described_class.new.perform(
+          patient_changeset.to_global_id.to_s,
+          "no_fuzzy_without_history",
+          nil,
+          nil
         )
-      }.to enqueue_sidekiq_job(ProcessPatientChangesetSidekiqJob).with(
+      }.to enqueue_sidekiq_job(ProcessPatientChangesetJob).with(
         patient_changeset.id
       )
     end
@@ -293,8 +332,13 @@ describe PDSCascadingSearchJob do
 
     it "saves the search result into the provided array and enqueues PatientUpdateFromPDSJob" do
       expect {
-        described_class.new.perform(patient, search_results:)
-      }.to enqueue_sidekiq_job(PatientUpdateFromPDSSidekiqJob).with(
+        described_class.new.perform(
+          patient.to_global_id.to_s,
+          nil,
+          search_results,
+          nil
+        )
+      }.to enqueue_sidekiq_job(PatientUpdateFromPDSJob).with(
         patient.id,
         [
           a_hash_including(
@@ -311,11 +355,12 @@ describe PDSCascadingSearchJob do
 
       expect {
         described_class.new.perform(
-          patient,
-          step_name: "no_fuzzy_with_history",
-          search_results:
+          patient.to_global_id.to_s,
+          "no_fuzzy_with_history",
+          search_results,
+          nil
         )
-      }.to enqueue_sidekiq_job(PDSCascadingSearchSidekiqJob).with(
+      }.to enqueue_sidekiq_job(described_class).with(
         patient.to_global_id.to_s,
         "no_fuzzy_with_wildcard_postcode",
         [
@@ -347,8 +392,13 @@ describe PDSCascadingSearchJob do
       )
 
       expect {
-        described_class.new.perform(patient, search_results:)
-      }.to enqueue_sidekiq_job(PatientUpdateFromPDSSidekiqJob).with(
+        described_class.new.perform(
+          patient.to_global_id.to_s,
+          nil,
+          search_results,
+          nil
+        )
+      }.to enqueue_sidekiq_job(PatientUpdateFromPDSJob).with(
         patient.id,
         search_results +
           [
@@ -368,8 +418,13 @@ describe PDSCascadingSearchJob do
       expect(Sentry).to receive(:capture_exception)
 
       expect {
-        described_class.new.perform(patient, search_results:)
-      }.to enqueue_sidekiq_job(PatientUpdateFromPDSSidekiqJob).with(
+        described_class.new.perform(
+          patient.to_global_id.to_s,
+          nil,
+          search_results,
+          nil
+        )
+      }.to enqueue_sidekiq_job(PatientUpdateFromPDSJob).with(
         patient.id,
         [
           a_hash_including(
