@@ -19,8 +19,6 @@ describe AlreadyHadNotificationSender do
     create(:vaccination_record, programme:, patient:, session:, performed_at:)
   end
 
-  before { ActiveJob::Base.queue_adapter.enqueued_jobs.clear }
-
   shared_examples "sends no notifications" do
     it { expect { call }.not_to deliver_email }
     it { expect { call }.not_to deliver_sms }

@@ -1,8 +1,6 @@
 # frozen_string_literal: true
 
 describe ProcessPatientChangesetJob, :pds do
-  include ActiveJob::TestHelper
-
   let(:programme) { Programme.hpv }
   let(:team) { create(:team, programmes: [programme]) }
   let(:import) { create(:cohort_import, team:) }

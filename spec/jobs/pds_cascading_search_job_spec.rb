@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 describe PDSCascadingSearchJob do
-  include ActiveJob::TestHelper
   include ImportsHelper
 
   let(:today) { Time.zone.local(2025, 9, 1, 12, 0, 0) }

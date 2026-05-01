@@ -2,7 +2,6 @@
 
 describe BulkRemoveParentRelationshipsJob do
   include ImportsHelper
-  include ActiveJob::TestHelper
 
   subject(:perform_job) do
     described_class.new.perform(
