@@ -1,6 +1,8 @@
 # Default settings that are prodlike. Overrides should go in to the
 # environment specific settings files.
 
+sentry_dsn: <%= Rails.application.credentials.sentry_dsn %>
+
 allow_dev_phone_numbers: false
 disallow_database_seeding: true
 web_concurrency: 2
