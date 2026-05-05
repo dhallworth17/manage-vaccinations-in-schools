@@ -58,16 +58,18 @@ Sentry.init do |config|
       Rails.application.config.filter_parameters + [sensitive_value_filter]
     )
 
+  # We don't want to send these errors to Sentry as they are too noisy. We
+  # don't want to not raise them, however, since they trigger a retry with
+  # Sidekiq, which we want. It can also be handy to have them in Splunk and
+  # Cloudwatch to help with debugging.
+  config.excluded_exceptions << "Faraday::TooManyRequestsError"
+
   config.before_send =
     lambda do |event, hint|
       exception = hint[:exception]
 
-      # We don't want to send these errors to Sentry as they are too noisy. We
-      # don't want to not raise them, however, since they trigger a retry with
-      # Sidekiq, which we want. It can also be handy to have them in Splunk and
-      # Cloudwatch to help with debugging.
-      next if exception.is_a?(Faraday::TooManyRequestsError)
-
+      # There's not much we can action on these 502 errors, they'll still get
+      # logged elsewhere.
       if exception.is_a?(Faraday::ServerError) &&
            exception.message.include?(
              "https://api.service.nhs.uk/immunisation-fhir-api"
@@ -85,8 +87,6 @@ Sentry.init do |config|
             )
 
         next if team_only_api_key_error
-
-        next if exception.is_a?(Faraday::TooManyRequestsError)
       end
 
       event.extra = combined_filter.filter(event.extra) if event.extra
