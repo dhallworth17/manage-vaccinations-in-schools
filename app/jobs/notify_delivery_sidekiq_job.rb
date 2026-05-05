@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require "notifications/client"
-
 # This is a temporary copy of `NotifyDeliveryJob` that will be removed when
 # all jobs have been converted to Sidekiq.
 class NotifyDeliverySidekiqJob < ApplicationJobSidekiq
