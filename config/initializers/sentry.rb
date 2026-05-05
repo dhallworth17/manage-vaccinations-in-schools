@@ -64,6 +64,10 @@ Sentry.init do |config|
   # Cloudwatch to help with debugging.
   config.excluded_exceptions << "Faraday::TooManyRequestsError"
 
+  # This is added temporarily until we can apply an appropriate fix for the
+  # issue of having characters that PDS won't accept.
+  config.excluded_exceptions << "NHS::PDS::InvalidSearchData"
+
   config.before_send =
     lambda do |event, hint|
       exception = hint[:exception]
