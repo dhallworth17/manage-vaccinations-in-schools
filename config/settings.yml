@@ -60,7 +60,7 @@ reporting_api:
     secret: <%= Rails.application.credentials.reporting_api&.secret %>
 
 careplus:
-  base_url: https://careplus.syhapp.thirdparty.nhs.uk
+  base_url: https://careplus-wmids.syhapp.com
 
 ordnance_survey:
   api_key: <%= Rails.application.credentials.ordnance_survey&.api_key %>
