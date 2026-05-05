@@ -91,6 +91,9 @@ module CSVImportable
     end
 
     before_save :ensure_processed_with_count_statistics
+
+    after_create :log_started
+    prepend ImportLogging
   end
 
   # Assign an uploaded CSV file to this import.

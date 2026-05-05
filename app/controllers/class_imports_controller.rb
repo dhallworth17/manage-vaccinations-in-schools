@@ -122,6 +122,7 @@ class ClassImportsController < ApplicationController
         processed_at: Time.zone.now
       )
       @class_import.postprocess_rows!
+      @class_import.log_finished
     end
 
     redirect_to imports_path, flash: { info: "Import started" }

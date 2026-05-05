@@ -94,6 +94,7 @@ class CommitPatientChangesetsJob < ApplicationJob
     import.postprocess_rows!
     reset_counts(import)
     import.update_columns(**counts)
+    import.log_finished if import.processed?
   end
 
   def trigger_re_review(import)
