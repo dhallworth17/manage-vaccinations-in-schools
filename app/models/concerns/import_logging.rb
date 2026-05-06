@@ -5,6 +5,21 @@ module ImportLogging
     log_with_tags(:info, "started")
   end
 
+  def in_review!
+    super
+    log_with_tags(:info, "in_review")
+  end
+
+  def in_re_review!
+    super
+    log_with_tags(:info, "in_re_review")
+  end
+
+  def committing!
+    super
+    log_with_tags(:info, "committing")
+  end
+
   def log_finished
     log_with_tags(
       :info,
