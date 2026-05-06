@@ -4,6 +4,7 @@ describe SendSchoolSessionRemindersJob do
   subject(:perform) { described_class.new.perform(session.id) }
 
   let(:team) { create(:team, programmes:) }
+  let(:notifier) { instance_double(Notifier::Patient) }
   let(:session) { create(:session, :tomorrow, programmes:, team:) }
   let(:programmes) { [Programme.hpv] }
   let(:parents) { create_list(:parent, 2) }
@@ -11,14 +12,17 @@ describe SendSchoolSessionRemindersJob do
     create(:patient, :consent_given_triage_not_needed, parents:, programmes:)
   end
 
-  before { create(:patient_location, patient:, session:) }
+  before do
+    create(:patient_location, patient:, session:)
+    allow(Notifier::Patient).to receive(:new).and_return(notifier)
+    allow(notifier).to receive(:send_session_reminder)
+  end
 
   it "sends a notification" do
-    expect(SessionNotification).to receive(:create_and_send!).once.with(
-      patient:,
-      session:,
-      session_date: Date.tomorrow,
-      type: :school_reminder
+    expect(notifier).to receive(:send_session_reminder).once.with(
+      session,
+      Date.tomorrow,
+      sent_by: nil
     )
     perform
   end
@@ -34,11 +38,10 @@ describe SendSchoolSessionRemindersJob do
     end
 
     it "sends a notification" do
-      expect(SessionNotification).to receive(:create_and_send!).once.with(
-        patient:,
-        session:,
-        session_date: Date.tomorrow,
-        type: :school_reminder
+      expect(notifier).to receive(:send_session_reminder).once.with(
+        session,
+        Date.tomorrow,
+        sent_by: nil
       )
       perform
     end
@@ -48,8 +51,7 @@ describe SendSchoolSessionRemindersJob do
     let(:patient) { create(:patient, parents:) }
 
     it "doesn't send any notifications" do
-      expect(SessionNotification).not_to receive(:create_and_send!)
-      perform
+      expect { perform }.not_to change(SessionNotification, :count)
     end
   end
 
@@ -59,8 +61,7 @@ describe SendSchoolSessionRemindersJob do
     end
 
     it "doesn't send any notifications" do
-      expect(SessionNotification).not_to receive(:create_and_send!)
-      perform
+      expect { perform }.not_to change(SessionNotification, :count)
     end
   end
 
@@ -71,8 +72,7 @@ describe SendSchoolSessionRemindersJob do
     end
 
     it "doesn't send any notifications" do
-      expect(SessionNotification).not_to receive(:create_and_send!)
-      perform
+      expect { perform }.not_to change(SessionNotification, :count)
     end
   end
 
@@ -80,8 +80,7 @@ describe SendSchoolSessionRemindersJob do
     let(:patient) { create(:patient, :deceased, parents:) }
 
     it "doesn't send any notifications" do
-      expect(SessionNotification).not_to receive(:create_and_send!)
-      perform
+      expect { perform }.not_to change(SessionNotification, :count)
     end
   end
 
@@ -89,8 +88,7 @@ describe SendSchoolSessionRemindersJob do
     let(:patient) { create(:patient, :invalidated, parents:) }
 
     it "doesn't send any notifications" do
-      expect(SessionNotification).not_to receive(:create_and_send!)
-      perform
+      expect { perform }.not_to change(SessionNotification, :count)
     end
   end
 
@@ -98,8 +96,7 @@ describe SendSchoolSessionRemindersJob do
     let(:patient) { create(:patient, :restricted, parents:) }
 
     it "doesn't send any notifications" do
-      expect(SessionNotification).not_to receive(:create_and_send!)
-      perform
+      expect { perform }.not_to change(SessionNotification, :count)
     end
   end
 
@@ -107,8 +104,7 @@ describe SendSchoolSessionRemindersJob do
     let(:patient) { create(:patient, :archived, parents:, team:) }
 
     it "doesn't send any notifications" do
-      expect(SessionNotification).not_to receive(:create_and_send!)
-      perform
+      expect { perform }.not_to change(SessionNotification, :count)
     end
   end
 end
