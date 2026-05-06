@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 describe SendAutomaticSchoolConsentRemindersJob do
-  subject(:perform_now) { described_class.perform_now(session) }
+  subject(:perform) { described_class.new.perform(session.id) }
 
   let(:programmes) { [Programme.flu] }
   let(:user) { create(:user, team:) }
@@ -110,7 +110,7 @@ describe SendAutomaticSchoolConsentRemindersJob do
     let(:today) { dates.first - 2.weeks }
 
     it "doesn't send any notifications" do
-      expect { perform_now }.not_to change(ConsentNotification, :count)
+      expect { perform }.not_to change(ConsentNotification, :count)
     end
   end
 
@@ -118,7 +118,7 @@ describe SendAutomaticSchoolConsentRemindersJob do
     let(:today) { dates.first - 1.week }
 
     it "sends notifications to one patient" do
-      expect { perform_now }.to change(ConsentNotification, :count).by(1)
+      expect { perform }.to change(ConsentNotification, :count).by(1)
 
       consent_notification = ConsentNotification.last
       expect(consent_notification).to be_initial_reminder
@@ -170,7 +170,7 @@ describe SendAutomaticSchoolConsentRemindersJob do
       end
 
       it "sends notifications to one patient" do
-        expect { perform_now }.to change(ConsentNotification, :count).by(1)
+        expect { perform }.to change(ConsentNotification, :count).by(1)
 
         consent_notification = ConsentNotification.last
         expect(consent_notification).to be_initial_reminder
@@ -187,7 +187,7 @@ describe SendAutomaticSchoolConsentRemindersJob do
       let(:location) { create(:generic_clinic, team:) }
 
       it "doesn't send any notifications" do
-        expect { perform_now }.not_to change(ConsentNotification, :count)
+        expect { perform }.not_to change(ConsentNotification, :count)
       end
     end
 
@@ -205,7 +205,7 @@ describe SendAutomaticSchoolConsentRemindersJob do
       end
 
       it "sends automatic reminders" do
-        expect { perform_now }.to change(ConsentNotification, :count).by(1)
+        expect { perform }.to change(ConsentNotification, :count).by(1)
 
         notification = ConsentNotification.last
         expect(notification.patient).to eq(patient_not_sent_reminder)
@@ -233,7 +233,7 @@ describe SendAutomaticSchoolConsentRemindersJob do
       end
 
       it "does not send an automatic reminder" do
-        expect { perform_now }.not_to change(ConsentNotification, :count)
+        expect { perform }.not_to change(ConsentNotification, :count)
       end
     end
   end
@@ -251,7 +251,7 @@ describe SendAutomaticSchoolConsentRemindersJob do
     end
 
     it "doesn't send any notifications" do
-      expect { perform_now }.not_to change(ConsentNotification, :count)
+      expect { perform }.not_to change(ConsentNotification, :count)
     end
   end
 
@@ -261,7 +261,7 @@ describe SendAutomaticSchoolConsentRemindersJob do
 
     context "when a manual reminder was sent less than three days before the reminder should have gone out" do
       it "does not send an automatic reminder because the first session's reminder should be skipped" do
-        expect { perform_now }.not_to change(
+        expect { perform }.not_to change(
           ConsentNotification.where(patient_id: manual_reminder_patient.id),
           :count
         )
@@ -275,7 +275,7 @@ describe SendAutomaticSchoolConsentRemindersJob do
 
     context "when a manual reminder was sent less than three days before the reminder should have gone out" do
       it "sends the reminder for the second session" do
-        expect { perform_now }.to change(ConsentNotification, :count).by(1)
+        expect { perform }.to change(ConsentNotification, :count).by(1)
       end
     end
   end
@@ -284,12 +284,12 @@ describe SendAutomaticSchoolConsentRemindersJob do
     let(:today) { dates.first + 1.day }
 
     it "doesn't send a reminder to the patient who just joined" do
-      expect { perform_now }.not_to change(
+      expect { perform }.not_to change(
         patient_not_sent_reminder_joined_after_first_date.consent_notifications,
         :count
       )
 
-      perform_now
+      perform
 
       expect(
         patient_not_sent_reminder_joined_after_first_date.consent_notifications.count
@@ -301,7 +301,7 @@ describe SendAutomaticSchoolConsentRemindersJob do
     let(:today) { dates.last - 1.week }
 
     it "sends notifications to three patients" do
-      expect { perform_now }.to change(ConsentNotification, :count).by(3)
+      expect { perform }.to change(ConsentNotification, :count).by(3)
 
       consent_notifications = ConsentNotification.order(sent_at: :desc).limit(3)
 

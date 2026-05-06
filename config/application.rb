@@ -5,7 +5,7 @@ require_relative "boot"
 require "rails"
 # Pick the frameworks you want:
 require "active_model/railtie"
-require "active_job/railtie"
+# require "active_job/railtie"
 require "active_record/railtie"
 require "active_storage/engine"
 require "action_controller/railtie"
@@ -71,8 +71,6 @@ module ManageVaccinations
     config.exceptions_app = routes
 
     config.active_model.i18n_customize_full_message = true
-
-    config.active_job.queue_adapter = :sidekiq
 
     config.view_component.default_preview_layout = "component_preview"
     config.view_component.previews.controller = "ComponentPreviewsController"

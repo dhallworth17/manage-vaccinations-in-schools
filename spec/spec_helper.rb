@@ -118,7 +118,6 @@ Capybara.asset_host = "http://localhost:4000"
 Console.logger.off!
 Capybara.server = :falcon
 
-ActiveJob::Base.queue_adapter = :test
 Sidekiq.testing!(:fake)
 
 OmniAuth.config.test_mode = true
@@ -211,7 +210,6 @@ RSpec.configure do |config|
 
   config.around { |example| DatabaseCleaner.cleaning { example.run } }
 
-  config.include ActiveJob::TestHelper, type: :feature
   config.include ActiveSupport::Testing::TimeHelpers
   config.include Capybara::RSpecMatchers, type: :component
   config.include Devise::Test::ControllerHelpers, type: :controller

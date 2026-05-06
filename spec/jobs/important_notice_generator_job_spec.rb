@@ -57,7 +57,7 @@ describe ImportantNoticeGeneratorJob do
       context "patient is no longer restricted" do
         before do
           patient.update!(restricted_at: Time.current)
-          ImportantNoticeGeneratorSidekiqJob.drain
+          described_class.drain
           patient.update_column(:restricted_at, nil)
         end
 
@@ -75,18 +75,18 @@ describe ImportantNoticeGeneratorJob do
         before do
           # Create initial notices
           patient.update_column(:restricted_at, Time.current)
-          described_class.perform_now([patient.id])
+          described_class.new.perform([patient.id])
 
           # Clear restriction and dismiss notices
           patient.update_column(:restricted_at, nil)
-          described_class.perform_now([patient.id])
+          described_class.new.perform([patient.id])
 
           # Re-apply restriction
           patient.update_column(:restricted_at, Time.current)
         end
 
         it "creates a new active restricted notice (dismissed notices do not block re-creation)" do
-          expect { described_class.perform_now([patient.id]) }.to change {
+          expect { described_class.new.perform([patient.id]) }.to change {
             ImportantNotice
               .active(team: team_a)
               .where(patient:, type: :restricted)
@@ -118,7 +118,7 @@ describe ImportantNoticeGeneratorJob do
       context "patient is no longer invalidated" do
         before do
           patient.update!(invalidated_at: Time.current)
-          ImportantNoticeGeneratorSidekiqJob.drain
+          described_class.drain
           patient.update_column(:invalidated_at, nil)
         end
 
@@ -144,11 +144,9 @@ describe ImportantNoticeGeneratorJob do
             programme: programmes.first,
             session: session_a
           )
-        }.to enqueue_sidekiq_job(ImportantNoticeGeneratorSidekiqJob).with(
-          [patient.id]
-        )
+        }.to enqueue_sidekiq_job(described_class).with([patient.id])
 
-        ImportantNoticeGeneratorSidekiqJob.drain
+        described_class.drain
 
         expect(team_a.important_notices.count).to eq(1)
         expect(team_b.important_notices.count).to eq(0)
@@ -187,7 +185,7 @@ describe ImportantNoticeGeneratorJob do
         )
 
         expect {
-          described_class.perform_now([team_changed_patient.id])
+          described_class.new.perform([team_changed_patient.id])
         }.to change {
           ImportantNotice
             .active(team: team_b)
@@ -222,7 +220,7 @@ describe ImportantNoticeGeneratorJob do
         )
 
         expect {
-          described_class.perform_now([patient_no_school.id])
+          described_class.new.perform([patient_no_school.id])
         }.to change {
           ImportantNotice
             .active(team: team_a)
@@ -258,7 +256,7 @@ describe ImportantNoticeGeneratorJob do
             .where(patient: patient_no_association)
 
         expect {
-          described_class.perform_now([patient_no_association.id])
+          described_class.new.perform([patient_no_association.id])
         }.not_to change(important_notices, :count)
       end
     end

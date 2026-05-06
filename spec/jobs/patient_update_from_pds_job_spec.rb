@@ -3,7 +3,11 @@
 describe PatientUpdateFromPDSJob do
   include PDSHelper
 
-  subject(:perform_now) { described_class.perform_now(patient) }
+  subject(:perform) { described_class.new.perform(patient.id, nil) }
+
+  before do
+    allow(Patient).to receive(:find).with(patient.id).and_return(patient)
+  end
 
   context "when main switch is disabled" do
     let!(:patient) { create(:patient, nhs_number: "9000000009") }
@@ -11,7 +15,7 @@ describe PatientUpdateFromPDSJob do
     it "makes no requests to PDS" do
       expect(patient).not_to receive(:update_from_pds!)
       # WebMock will raise an error if the request is made
-      perform_now
+      perform
     end
   end
 
@@ -22,7 +26,7 @@ describe PatientUpdateFromPDSJob do
       let(:patient) { create(:patient, nhs_number: nil) }
 
       it "raises an error" do
-        expect { perform_now }.to raise_error(
+        expect { perform }.to raise_error(
           PatientUpdateFromPDSJob::MissingNHSNumber
         )
       end
@@ -50,21 +54,19 @@ describe PatientUpdateFromPDSJob do
 
         it "updates the patient details from PDS" do
           expect(patient).to receive(:update_from_pds!)
-          perform_now
+          perform
         end
 
         it "doesn't change the NHS number" do
-          expect { perform_now }.not_to change(patient, :nhs_number)
+          expect { perform }.not_to change(patient, :nhs_number)
         end
 
         it "doesn't delete the patient number" do
-          expect { perform_now }.not_to change(Patient, :count)
+          expect { perform }.not_to change(Patient, :count)
         end
 
         it "doesn't queue a job to look up NHS number" do
-          expect { perform_now }.not_to enqueue_sidekiq_job(
-            PDSCascadingSearchSidekiqJob
-          )
+          expect { perform }.not_to enqueue_sidekiq_job(PDSCascadingSearchJob)
         end
 
         context "when the patient is invalidated" do
@@ -74,7 +76,7 @@ describe PatientUpdateFromPDSJob do
 
           it "updates the patient details from PDS" do
             expect(patient).to receive(:update_from_pds!)
-            perform_now
+            perform
           end
         end
 
@@ -82,16 +84,14 @@ describe PatientUpdateFromPDSJob do
           let!(:patient) { create(:patient, nhs_number: "0123456789") }
 
           it "updates the NHS number" do
-            expect { perform_now }.to change(patient, :nhs_number).to(
-              "9000000009"
-            )
+            expect { perform }.to change(patient, :nhs_number).to("9000000009")
           end
 
           context "when a patient already exists for the new NHS number" do
             before { create(:patient, nhs_number: "9000000009") }
 
             it "deletes the patient without an NHS number" do
-              expect { perform_now }.to change(Patient, :count).by(-1)
+              expect { perform }.to change(Patient, :count).by(-1)
               expect { patient.reload }.to raise_error(
                 ActiveRecord::RecordNotFound
               )
@@ -118,13 +118,16 @@ describe PatientUpdateFromPDSJob do
 
         it "marks the patient as invalid" do
           expect(patient).to receive(:invalidate!)
-          perform_now
+          perform
         end
 
         it "queues a job to look up NHS number using PDS cascading search" do
-          expect { perform_now }.to enqueue_sidekiq_job(
-            PDSCascadingSearchSidekiqJob
-          ).with(patient.to_global_id.to_s, nil, nil, nil)
+          expect { perform }.to enqueue_sidekiq_job(PDSCascadingSearchJob).with(
+            patient.to_global_id.to_s,
+            nil,
+            nil,
+            nil
+          )
         end
       end
 
@@ -146,17 +149,20 @@ describe PatientUpdateFromPDSJob do
 
         it "marks the patient as invalid" do
           expect(patient).to receive(:invalidate!)
-          perform_now
+          perform
         end
 
         it "doesn't remove the NHS number" do
-          expect { perform_now }.not_to change(patient, :nhs_number)
+          expect { perform }.not_to change(patient, :nhs_number)
         end
 
         it "queues a job to look up NHS number using PDS cascading search" do
-          expect { perform_now }.to enqueue_sidekiq_job(
-            PDSCascadingSearchSidekiqJob
-          ).with(patient.to_global_id.to_s, nil, nil, nil)
+          expect { perform }.to enqueue_sidekiq_job(PDSCascadingSearchJob).with(
+            patient.to_global_id.to_s,
+            nil,
+            nil,
+            nil
+          )
         end
       end
 
@@ -178,17 +184,20 @@ describe PatientUpdateFromPDSJob do
 
         it "doesn't mark the patient as invalid" do
           expect(patient).not_to receive(:invalidate!)
-          perform_now
+          perform
         end
 
         it "removes the NHS number" do
-          expect { perform_now }.to change(patient, :nhs_number).to(nil)
+          expect { perform }.to change(patient, :nhs_number).to(nil)
         end
 
         it "queues a job to look up NHS number using PDS cascading search" do
-          expect { perform_now }.to enqueue_sidekiq_job(
-            PDSCascadingSearchSidekiqJob
-          ).with(patient.to_global_id.to_s, nil, nil, nil)
+          expect { perform }.to enqueue_sidekiq_job(PDSCascadingSearchJob).with(
+            patient.to_global_id.to_s,
+            nil,
+            nil,
+            nil
+          )
         end
       end
     end
@@ -217,7 +226,7 @@ describe PatientUpdateFromPDSJob do
 
       it "imports the search results for the patient" do
         expect {
-          described_class.perform_now(patient, search_results)
+          described_class.new.perform(patient.id, search_results)
         }.to change(PDSSearchResult, :count).by(2)
 
         created_results = PDSSearchResult.where(patient_id: patient.id)
@@ -232,7 +241,7 @@ describe PatientUpdateFromPDSJob do
 
       it "does not raise an error when NHS number is nil but search_results are present" do
         expect {
-          described_class.perform_now(patient, search_results)
+          described_class.new.perform(patient.id, search_results)
         }.not_to raise_error
       end
 
@@ -256,7 +265,7 @@ describe PatientUpdateFromPDSJob do
 
         it "doesn't update the patient" do
           expect(patient).not_to receive(:update_from_pds!)
-          described_class.perform_now(patient, search_results)
+          described_class.new.perform(patient.id, search_results)
         end
       end
     end

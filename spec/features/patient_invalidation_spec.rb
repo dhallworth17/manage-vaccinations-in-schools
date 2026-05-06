@@ -60,7 +60,7 @@ describe "Patient invalidation deletes vaccination record from API", :pds do
     stub_pds_search_to_return_no_patients
     stub_pds_get_nhs_number_to_return_an_invalidated_patient
 
-    PatientUpdateFromPDSJob.new.perform(@patient, [])
+    PatientUpdateFromPDSJob.new.perform(@patient.id, [])
   end
 
   def then_the_patient_has_been_invalidated

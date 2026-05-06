@@ -895,7 +895,7 @@ class Patient < ApplicationRecord
 
   def generate_important_notice_if_needed
     if should_generate_important_notice?
-      ImportantNoticeGeneratorSidekiqJob.perform_async([id])
+      ImportantNoticeGeneratorJob.perform_async([id])
     end
   end
 end
