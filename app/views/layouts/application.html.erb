@@ -67,7 +67,11 @@
           </ul>
           <% if app_version %>
             <p class="nhsuk-body-s nhsuk-u-secondary-text-colour">
-              <%= app_version %>
+              <% if app_version.match?(/\Av\d+(\.\d+)+\z/) %>
+                <%= link_to app_version, "https://github.com/NHSDigital/manage-vaccinations-in-schools/releases/tag/#{app_version}" %>
+              <% else %>
+                <%= app_version %>
+              <% end %>
             </p>
           <% end %>
           <% if current_user.present? %>
