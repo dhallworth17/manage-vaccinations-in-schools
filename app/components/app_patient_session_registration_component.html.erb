@@ -4,7 +4,7 @@
   <% if registration_status.completed? %>
     <p><%= patient.given_name %> has completed this session.</p>
   <% elsif registration_status.unknown? %>
-    <p><%= patient.full_name %> is not registered yet.</p>
+    <p><%= patient.given_name %> is not registered yet.</p>
     <% if can_edit? %>
       <hr class="nhsuk-section-break nhsuk-section-break--visible nhsuk-section-break--m">
       <%= form_with model: attendance_record,
@@ -25,7 +25,7 @@
       <% end %>
     <% end %>
   <% elsif registration_status.attending? %>
-    <p><%= patient.full_name %> is attending today’s session.</p>
+    <p><%= patient.given_name %> is attending today’s session.</p>
     <% if can_edit? %>
       <%= render AppActionLinkComponent.new(
             text: "Update attendance",
@@ -33,7 +33,7 @@
           ) %>
     <% end %>
   <% elsif registration_status.not_attending? %>
-    <p><%= patient.full_name %> is absent from today’s session.</p>
+    <p><%= patient.given_name %> is absent from today’s session.</p>
     <% if can_edit? %>
       <%= render AppActionLinkComponent.new(
             text: "Update attendance",
