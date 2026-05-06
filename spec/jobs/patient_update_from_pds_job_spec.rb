@@ -3,11 +3,13 @@
 describe PatientUpdateFromPDSJob do
   include PDSHelper
 
-  subject(:perform) { described_class.new.perform(patient.id, nil) }
+  subject(:perform) { described_class.new.perform(patient.id, search_results) }
 
   before do
     allow(Patient).to receive(:find).with(patient.id).and_return(patient)
   end
+
+  let(:search_results) { nil }
 
   context "when main switch is disabled" do
     let!(:patient) { create(:patient, nhs_number: "9000000009") }
@@ -202,70 +204,77 @@ describe PatientUpdateFromPDSJob do
       end
     end
 
-    context "when search_results are provided" do
-      let!(:patient) { create(:patient, nhs_number: nil) }
-
+    context "when search results are provided" do
       let(:search_results) do
         [
           {
-            step: "no_fuzzy_with_wildcard_family_name",
-            result: "one_match",
-            nhs_number: "9000000009",
-            created_at: Time.zone.now
-          }.with_indifferent_access,
+            "step" => "no_fuzzy_with_wildcard_family_name",
+            "result" => "one_match",
+            "nhs_number" => "9000000009",
+            "created_at" => Time.zone.now.iso8601
+          },
           {
-            step: "no_fuzzy_with_wildcard_given_name",
-            result: "one_match",
-            nhs_number: "9000000009",
-            created_at: 1.minute.ago
-          }.with_indifferent_access
+            "step" => "no_fuzzy_with_wildcard_given_name",
+            "result" => "one_match",
+            "nhs_number" => "9000000009",
+            "created_at" => 1.minute.ago.iso8601
+          }
         ]
       end
 
       before { stub_pds_get_nhs_number_to_return_a_patient("9000000009") }
 
-      it "imports the search results for the patient" do
-        expect {
-          described_class.new.perform(patient.id, search_results)
-        }.to change(PDSSearchResult, :count).by(2)
+      context "when patient NHS number matches" do
+        let!(:patient) { create(:patient, nhs_number: "9000000009") }
 
-        created_results = PDSSearchResult.where(patient_id: patient.id)
-        expect(created_results.pluck(:step)).to match_array(
-          %w[
-            no_fuzzy_with_wildcard_family_name
-            no_fuzzy_with_wildcard_given_name
-          ]
-        )
-        expect(created_results.pluck(:nhs_number)).to all(eq("9000000009"))
+        it "updates the patient" do
+          expect(patient).to receive(:update_from_pds!)
+          perform
+        end
       end
 
-      it "does not raise an error when NHS number is nil but search_results are present" do
-        expect {
-          described_class.new.perform(patient.id, search_results)
-        }.not_to raise_error
-      end
+      context "when patient NHS number is nil" do
+        let!(:patient) { create(:patient, nhs_number: nil) }
 
-      context "with conflicting NHS numbers in search results" do
-        let(:search_results) do
-          [
-            {
-              step: "no_fuzzy_with_wildcard_family_name",
-              result: "one_match",
-              nhs_number: "9000000009",
-              created_at: Time.zone.now
-            }.with_indifferent_access,
-            {
-              step: "no_fuzzy_with_wildcard_given_name",
-              result: "one_match",
-              nhs_number: "9000000018",
-              created_at: 1.minute.ago
-            }.with_indifferent_access
-          ]
+        it "imports the search results for the patient" do
+          expect { perform }.to change(PDSSearchResult, :count).by(2)
+
+          created_results = PDSSearchResult.where(patient_id: patient.id)
+          expect(created_results.pluck(:step)).to match_array(
+            %w[
+              no_fuzzy_with_wildcard_family_name
+              no_fuzzy_with_wildcard_given_name
+            ]
+          )
+          expect(created_results.pluck(:nhs_number)).to all(eq("9000000009"))
         end
 
-        it "doesn't update the patient" do
-          expect(patient).not_to receive(:update_from_pds!)
-          described_class.new.perform(patient.id, search_results)
+        it "does not raise an error" do
+          expect { perform }.not_to raise_error
+        end
+
+        context "with conflicting NHS numbers in search results" do
+          let(:search_results) do
+            [
+              {
+                "step" => "no_fuzzy_with_wildcard_family_name",
+                "result" => "one_match",
+                "nhs_number" => "9000000009",
+                "created_at" => Time.zone.now.iso8601
+              },
+              {
+                "step" => "no_fuzzy_with_wildcard_given_name",
+                "result" => "one_match",
+                "nhs_number" => "9000000018",
+                "created_at" => 1.minute.ago.iso8601
+              }
+            ]
+          end
+
+          it "doesn't update the patient" do
+            expect(patient).not_to receive(:update_from_pds!)
+            perform
+          end
         end
       end
     end

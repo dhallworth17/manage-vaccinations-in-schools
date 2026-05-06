@@ -150,10 +150,10 @@ class PatientImport < ApplicationRecord
   def process_no_postcode_changesets(changesets)
     changesets.find_each do |cs|
       cs.search_results << {
-        step: :no_fuzzy_with_history,
-        result: :no_postcode,
-        nhs_number: nil,
-        created_at: Time.current
+        "step" => "no_fuzzy_with_history",
+        "result" => "no_postcode",
+        "nhs_number" => nil,
+        "created_at" => Time.current.iso8601
       }
       cs.calculating_review!
       ReviewPatientChangesetJob.perform_async(cs.id)
