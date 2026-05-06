@@ -19,7 +19,7 @@ module Careplus
       base_url = Settings.careplus.base_url.presence or
         raise "Settings.careplus.base_url is empty or has not been configured " \
                 "(if this is a deployed service, the MOCK_CAREPLUS_URL environment variable may not be set)"
-      uri = URI.parse("#{base_url}/#{namespace}/soap.SchImms.cls")
+      uri = URI.parse("#{base_url}/#{namespace}/soap.SCHImms.cls")
       soap_body = build_soap_envelope
       post_soap_request(uri, soap_body)
     end
@@ -34,21 +34,21 @@ module Careplus
 
     def build_soap_envelope
       escaped_payload = CGI.escapeHTML(payload)
-      target_namespace = "#{TARGET_NAMESPACE_BASE}/#{namespace}/webservices"
 
       <<~XML
-        <?xml version="1.0" encoding="utf-8"?>
-        <soap:Envelope
-            xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"
-            xmlns:car="#{target_namespace}">
-          <soap:Body>
+        <?xml version="1.0" encoding="UTF-8"?>
+        <soapenv:Envelope
+            xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+            xmlns:car="http://careplus.syhapp.thirdparty.nhs.uk">
+          <soapenv:Header/>
+          <soapenv:Body>
             <car:InsertImmsRecord>
               <car:strUserId>#{username}</car:strUserId>
               <car:strPwd>#{password}</car:strPwd>
               <car:strPayload>#{escaped_payload}</car:strPayload>
             </car:InsertImmsRecord>
-          </soap:Body>
-        </soap:Envelope>
+          </soapenv:Body>
+        </soapenv:Envelope>
       XML
     end
 
@@ -57,7 +57,10 @@ module Careplus
       http.use_ssl = uri.scheme == "https"
 
       request = Net::HTTP::Post.new(uri.request_uri)
-      request["Content-Type"] = "text/xml; charset=utf-8"
+      request["Content-Type"] = "application/xml"
+      request[
+        "SOAPAction"
+      ] = "http://careplus.syhapp.thirdparty.nhs.uk/soap.SCHImms.InsertImmsRecord"
       request.body = body
 
       http.request(request)

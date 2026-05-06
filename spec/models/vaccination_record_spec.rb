@@ -473,19 +473,143 @@ describe VaccinationRecord do
     end
   end
 
-  describe "#for_academic_year" do
-    before { vaccination_record.save! }
+  describe "scopes" do
+    describe ".for_academic_year" do
+      subject(:scope) { described_class.for_academic_year(academic_year) }
 
-    it "returns the correct records" do
-      academic_year = vaccination_record.academic_year
+      before { vaccination_record.save! }
 
-      expect(described_class.for_academic_year(academic_year)).to include(
-        vaccination_record
-      )
+      let(:academic_year) { vaccination_record.academic_year }
 
-      expect(
-        described_class.for_academic_year(academic_year + 1)
-      ).not_to include(vaccination_record)
+      it "returns the correct records" do
+        expect(scope).to include(vaccination_record)
+        expect(
+          described_class.for_academic_year(academic_year + 1)
+        ).not_to include(vaccination_record)
+      end
+    end
+
+    describe ".created_or_updated_between" do
+      subject(:scope) do
+        described_class.created_or_updated_between(start_date, end_date)
+      end
+
+      around do |example|
+        travel_to(Time.zone.local(2023, 9, 1)) { example.run }
+      end
+
+      let(:filter_date) { Date.yesterday }
+      let(:start_date) { filter_date }
+      let(:end_date) { filter_date }
+      let(:window_start) { filter_date.beginning_of_day }
+      let(:window_end) { filter_date.end_of_day }
+      let(:time_within_window) { window_start + 12.hours }
+
+      let!(:record_created_within_window) do
+        create_vaccination_record_with_timestamps(
+          created_at: time_within_window,
+          updated_at: time_within_window
+        )
+      end
+
+      let!(:record_updated_within_window) do
+        create_vaccination_record_with_timestamps(
+          created_at: window_start - 1.day,
+          updated_at: time_within_window
+        )
+      end
+
+      let!(:record_spanning_window) do
+        create_vaccination_record_with_timestamps(
+          created_at: window_start - 1.day,
+          updated_at: window_end + 1.day
+        )
+      end
+
+      it "includes records created within the window" do
+        expect(scope).to include(record_created_within_window)
+      end
+
+      it "includes records updated within the window" do
+        expect(scope).to include(record_updated_within_window)
+      end
+
+      it "excludes records where neither timestamp falls within the window" do
+        expect(scope).not_to include(record_spanning_window)
+      end
+
+      context "without a start date" do
+        let(:start_date) { nil }
+
+        let!(:record_after_end) do
+          create_vaccination_record_with_timestamps(
+            created_at: window_end + 1.day,
+            updated_at: window_end + 1.day
+          )
+        end
+
+        it "includes records when either timestamp is on or before the end date" do
+          expect(scope).to include(record_created_within_window)
+          expect(scope).to include(record_updated_within_window)
+        end
+
+        it "excludes records where both timestamps are after the end date" do
+          expect(scope).not_to include(record_after_end)
+        end
+      end
+
+      context "without an end date" do
+        let(:end_date) { nil }
+
+        let!(:record_before_start) do
+          create_vaccination_record_with_timestamps(
+            created_at: window_start - 1.day,
+            updated_at: window_start - 1.day
+          )
+        end
+
+        it "includes records when either timestamp is on or after the start date" do
+          expect(scope).to include(record_created_within_window)
+          expect(scope).to include(record_updated_within_window)
+        end
+
+        it "excludes records where both timestamps are before the start date" do
+          expect(scope).not_to include(record_before_start)
+        end
+      end
+
+      context "without a start date or end date" do
+        let(:start_date) { nil }
+        let(:end_date) { nil }
+
+        let!(:record_before_window) do
+          create_vaccination_record_with_timestamps(
+            created_at: window_start - 2.days,
+            updated_at: window_start - 2.days
+          )
+        end
+
+        let!(:record_after_window) do
+          create_vaccination_record_with_timestamps(
+            created_at: window_end + 2.days,
+            updated_at: window_end + 2.days
+          )
+        end
+
+        it "includes all records" do
+          expect(scope).to include(record_created_within_window)
+          expect(scope).to include(record_updated_within_window)
+          expect(scope).to include(record_spanning_window)
+          expect(scope).to include(record_before_window)
+          expect(scope).to include(record_after_window)
+        end
+      end
+
+      def create_vaccination_record_with_timestamps(created_at:, updated_at:)
+        create(:vaccination_record).tap do |record|
+          record.update_columns(created_at:, updated_at:)
+        end
+      end
     end
   end
 

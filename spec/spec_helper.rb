@@ -108,11 +108,13 @@ if Rails.env.production?
 end
 require "rspec/rails"
 # Add additional requires below this line. Rails is not loaded until this point!
+require "capybara-screenshot/rspec"
 require "rack_session_access/capybara"
 require "console"
 
 Faker::Config.locale = "en-GB"
 
+Capybara.asset_host = "http://localhost:4000"
 Console.logger.off!
 Capybara.server = :falcon
 

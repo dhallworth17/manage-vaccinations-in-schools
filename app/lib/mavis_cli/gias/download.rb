@@ -21,6 +21,8 @@ module MavisCLI
              desc: "file path to write GIAS database to"
 
       def call(output_file:, **)
+        MavisCLI.load_rails
+
         logger = Logger.new($stdout)
         logger.formatter =
           proc { |_severity, _datetime, _progname, msg| "#{msg}\n" }

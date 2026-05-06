@@ -168,32 +168,38 @@ class VaccinationRecord < ApplicationRecord
 
   scope :created_or_updated_between,
         ->(start_date, end_date) do
-          scope = all
-          if start_date.present?
-            scope =
-              scope.where(
-                "vaccination_records.created_at >= ?",
-                start_date.beginning_of_day
-              ).or(
-                scope.where(
-                  "vaccination_records.updated_at >= ?",
-                  start_date.beginning_of_day
-                )
-              )
+          start_time = start_date&.beginning_of_day
+          end_time = end_date&.end_of_day
+
+          return all unless start_time || end_time
+
+          if start_time && end_time
+            where(
+              "(vaccination_records.created_at BETWEEN :start_time AND :end_time) " \
+                "OR (vaccination_records.updated_at BETWEEN :start_time AND :end_time)",
+              start_time:,
+              end_time:
+            )
+          elsif start_time
+            where(
+              "vaccination_records.created_at >= :start_time " \
+                "OR vaccination_records.updated_at >= :start_time",
+              start_time:
+            )
+          else
+            where(
+              "vaccination_records.created_at <= :end_time " \
+                "OR vaccination_records.updated_at <= :end_time",
+              end_time:
+            )
           end
-          if end_date.present?
-            scope =
-              scope.where(
-                "vaccination_records.created_at <= ?",
-                end_date.end_of_day
-              ).or(
-                scope.where(
-                  "vaccination_records.updated_at <= ?",
-                  end_date.end_of_day
-                )
-              )
-          end
-          scope
+        end
+
+  scope :created_or_updated_on_or_after,
+        ->(timestamp) do
+          where("vaccination_records.created_at >= ?", timestamp).or(
+            where("vaccination_records.updated_at >= ?", timestamp)
+          )
         end
 
   enum :protocol, { pgd: 0, psd: 1, national: 2 }, validate: { allow_nil: true }
@@ -385,7 +391,7 @@ class VaccinationRecord < ApplicationRecord
 
   def generate_important_notice_if_needed
     if should_generate_important_notice?
-      ImportantNoticeGeneratorJob.perform_later([patient_id])
+      ImportantNoticeGeneratorSidekiqJob.perform_async([patient_id])
     end
   end
 end

@@ -121,6 +121,7 @@ Rails.application.routes.draw do
         get "refresh-reporting", to: "refresh_reporting#create"
         post "vaccinations-search-in-nhs",
              to: "vaccinations_search_in_nhs#create"
+        get "vaccinations-search-in-nhs", to: "vaccinations_search_in_nhs#show"
       end
     end
 
