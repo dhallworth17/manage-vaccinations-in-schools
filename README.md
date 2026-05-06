@@ -343,6 +343,19 @@ The `private_key` will automatically be used to generate a JWK on the
 `/oidc/jwks` endpoint, which is used by CIS2 to validate the JWT we use to
 request the access token from CIS2.
 
+## Sentry Testing
+
+Mavis uses Sentry for error alerting.
+
+To test the Sentry integration locally, you can use the Sentry DSN value the
+staging/non-production environment locally:
+
+```shell
+$ MAVIS__SENTRY_DSN="$sentry_dsn_for_staging" rails c
+Loading development environment (Rails 8.1.3)
+[1] pry(main)> Sentry.capture_message("foobaroo")
+```
+
 ## Reporting
 
 See [docs/reporting.md](docs/reporting.md).
