@@ -61,6 +61,38 @@ describe PendingChangesConcern do
     end
   end
 
+  describe "#fills_missing_values_only?" do
+    it "returns true when changes only fill missing values" do
+      model.update!(address_line_1: nil, address_postcode: nil)
+
+      expect(
+        model.fills_missing_values_only?(
+          address_line_1: "123 Test Street",
+          address_postcode: "SW1A 1AA"
+        )
+      ).to be(true)
+    end
+
+    it "returns true when changes are unchanged after normalisation" do
+      expect(model.fills_missing_values_only?(given_name: " john ")).to be(true)
+    end
+
+    it "returns false when only some changes fill missing values" do
+      model.update!(address_postcode: nil)
+
+      expect(
+        model.fills_missing_values_only?(
+          address_postcode: "SW1A 1AA",
+          given_name: "Jane"
+        )
+      ).to be(false)
+    end
+
+    it "returns false when a populated value would be overwritten" do
+      expect(model.fills_missing_values_only?(given_name: "Jane")).to be(false)
+    end
+  end
+
   describe "#normalised" do
     it "downcases strings" do
       expect(model.send(:normalised, "HELLO WORLD")).to eq("hello world")

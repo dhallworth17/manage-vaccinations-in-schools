@@ -22,6 +22,15 @@ module PendingChangesConcern
     end
   end
 
+  def fills_missing_values_only?(attributes)
+    attributes.compact.all? do |attr, new_value|
+      current_value = public_send(attr)
+
+      normalised(new_value) == normalised(current_value) ||
+        (normalised(current_value).nil? && !normalised(new_value).nil?)
+    end
+  end
+
   def with_pending_changes
     return self if pending_changes.blank?
 

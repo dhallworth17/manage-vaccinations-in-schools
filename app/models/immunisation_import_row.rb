@@ -324,7 +324,15 @@ class ImmunisationImportRow
   end
 
   def update_existing_vaccination_record(vaccination_record)
-    vaccination_record.stage_changes(attributes_to_stage_if_already_exists)
+    if vaccination_record.fills_missing_values_only?(
+         attributes_to_stage_if_already_exists
+       )
+      vaccination_record.assign_attributes(
+        attributes_to_stage_if_already_exists.compact
+      )
+    else
+      vaccination_record.stage_changes(attributes_to_stage_if_already_exists)
+    end
 
     if should_stage_delivery_attributes?(vaccination_record)
       vaccination_record.stage_changes(delivery_attributes)

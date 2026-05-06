@@ -1616,6 +1616,59 @@ describe ImmunisationImportRow do
         it { should eq(existing_vaccination_record) }
       end
 
+      context "with an existing persisted vaccination record" do
+        let!(:existing_vaccination_record) do
+          create(
+            :vaccination_record,
+            team:,
+            programme: programmes.first,
+            location_name: location.name,
+            performed_by_user: nil,
+            performed_at_date: valid_hpv_data["DATE_OF_VACCINATION"],
+            performed_at_time: nil,
+            delivery_site: nil,
+            delivery_method: nil
+          )
+        end
+
+        context "when staged attributes only change from nil to populated" do
+          let(:data) do
+            valid_hpv_data.merge(
+              "PERSON_FORENAME" =>
+                existing_vaccination_record.patient.given_name,
+              "PERSON_SURNAME" =>
+                existing_vaccination_record.patient.family_name,
+              "PERSON_DOB" =>
+                existing_vaccination_record.patient.date_of_birth.to_s,
+              "NHS_NUMBER" => existing_vaccination_record.patient.nhs_number,
+              "PERSON_POSTCODE" =>
+                existing_vaccination_record.patient.address_postcode,
+              "BATCH_NUMBER" => "123",
+              "BATCH_EXPIRY_DATE" => "2026-01-06",
+              "NOTES" => "Imported notes",
+              "TIME_OF_VACCINATION" => "10:30:00",
+              "ORGANISATION_CODE" =>
+                existing_vaccination_record.performed_ods_code
+            )
+          end
+
+          it "assigns them directly without creating pending changes" do
+            expect(vaccination_record).to eq(existing_vaccination_record)
+            expect(vaccination_record.batch_number).to eq("123")
+            expect(vaccination_record.batch_expiry).to eq(Date.new(2026, 1, 6))
+            expect(vaccination_record.notes).to eq("Imported notes")
+            expect(vaccination_record.performed_at_time).to eq(
+              Time.new(2000, 1, 1, 10, 30, 0o0, "+00:00")
+            )
+            expect(vaccination_record.delivery_site).to eq(
+              "left_arm_upper_position"
+            )
+            expect(vaccination_record.delivery_method).to eq("intramuscular")
+            expect(vaccination_record.pending_changes).to be_empty
+          end
+        end
+      end
+
       describe "#batch_number" do
         subject(:batch_number) { vaccination_record.batch_number }
 
