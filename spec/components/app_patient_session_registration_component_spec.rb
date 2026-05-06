@@ -44,7 +44,7 @@ describe AppPatientSessionRegistrationComponent do
     context "when the user cannot edit" do
       before { stub_authorization(allowed: false) }
 
-      it { should have_text(patient.full_name) }
+      it { should have_text(patient.given_name) }
       it { should_not have_css("form") }
     end
   end
@@ -58,7 +58,7 @@ describe AppPatientSessionRegistrationComponent do
 
     it do
       expect(rendered).to have_text(
-        "#{patient.full_name} is attending today’s session."
+        "#{patient.given_name} is attending today’s session."
       )
     end
 
@@ -70,7 +70,7 @@ describe AppPatientSessionRegistrationComponent do
 
       it do
         expect(rendered).to have_text(
-          "#{patient.full_name} is attending today’s session."
+          "#{patient.given_name} is attending today’s session."
         )
       end
 
@@ -85,7 +85,7 @@ describe AppPatientSessionRegistrationComponent do
 
     it do
       expect(rendered).to have_text(
-        "#{patient.full_name} is absent from today’s session."
+        "#{patient.given_name} is absent from today’s session."
       )
     end
 
@@ -97,7 +97,7 @@ describe AppPatientSessionRegistrationComponent do
 
       it do
         expect(rendered).to have_text(
-          "#{patient.full_name} is absent from today’s session."
+          "#{patient.given_name} is absent from today’s session."
         )
       end
 
