@@ -21,32 +21,7 @@ class SendSchoolSessionRemindersJob < ApplicationJob
       )
 
     patients.find_each do |patient|
-      next unless should_send_notification?(patient:, session:)
-
-      SessionNotification.create_and_send!(
-        patient:,
-        session:,
-        session_date: date,
-        type: :school_reminder
-      )
-    end
-  end
-
-  def should_send_notification?(patient:, session:)
-    return false unless patient.send_notifications?(team: session.team)
-
-    programmes = session.programmes_for(patient:)
-    academic_year = session.academic_year
-
-    all_vaccinated =
-      programmes.all? do |programme|
-        patient.programme_status(programme, academic_year:).vaccinated?
-      end
-
-    return false if all_vaccinated
-
-    programmes.any? do |programme|
-      patient.consent_given_and_safe_to_vaccinate?(programme:, academic_year:)
+      patient.notifier.send_session_reminder(session, date, sent_by: nil)
     end
   end
 end

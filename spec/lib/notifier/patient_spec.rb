@@ -1321,4 +1321,116 @@ describe Notifier::Patient do
       end
     end
   end
+
+  describe "#send_session_reminder" do
+    subject(:send_session_reminder) do
+      travel_to(today) do
+        notifier.send_session_reminder(session, session_date, sent_by:)
+      end
+    end
+
+    let(:today) { Date.new(2024, 1, 1) }
+
+    let(:patient) { create(:patient, parents:, year_group: 10, session:) }
+    let(:programme) { Programme.td_ipv }
+    let(:programmes) { [programme] }
+    let(:programme_types) { programmes.map(&:type) }
+    let(:team) { create(:team, programmes:) }
+    let(:location) { create(:gias_school, team:) }
+    let(:session) { create(:session, location:, programmes:, team:) }
+    let(:session_date) { session.dates.min }
+    let(:sent_by) { create(:user) }
+
+    before do
+      create(:patient_programme_status, :due_injection, patient:, programme:)
+    end
+
+    context "without parents" do
+      let(:parents) { [] }
+
+      it "doesn't create a record" do
+        expect { send_session_reminder }.not_to change(
+          SessionNotification,
+          :count
+        )
+      end
+    end
+
+    context "with parents who gave consent" do
+      let(:parents) { create_list(:parent, 2) }
+
+      let(:delivery_params) do
+        {
+          parent_id: parent.id,
+          patient_id: patient.id,
+          session_id: session.id,
+          sent_by_user_id: sent_by.id
+        }
+      end
+
+      let(:parent) { parents.first }
+
+      before { create(:consent, :given, patient:, parent:, programme:) }
+
+      it "creates a record" do
+        expect { send_session_reminder }.to change(
+          SessionNotification,
+          :count
+        ).by(1)
+
+        session_notification = SessionNotification.last
+        expect(session_notification).to be_school_reminder
+        expect(session_notification.session).to eq(session)
+        expect(session_notification.patient).to eq(patient)
+        expect(session_notification.sent_at).to eq(today)
+      end
+
+      it "enqueues an email per parent who gave consent" do
+        expect { send_session_reminder }.to deliver_email(
+          :session_school_reminder
+        ).with(delivery_params.merge(programme_types:))
+      end
+
+      it "enqueues a text per parent" do
+        expect { send_session_reminder }.to deliver_sms(
+          :session_school_reminder
+        ).with(delivery_params.merge(programme_types:))
+      end
+
+      context "when parent doesn't want to receive updates by text" do
+        before { parents.each { it.update!(phone_receive_updates: false) } }
+
+        it "doesn't enqueues a text" do
+          expect { send_session_reminder }.not_to deliver_sms
+        end
+      end
+
+      context "with multiple programmes but only one eligible for vaccination" do
+        let(:consented_programmes) { [programme] }
+
+        # No consent for MenACWY
+        let(:programmes) { consented_programmes + [Programme.menacwy] }
+
+        it "enqueues an email per parent who gave consent" do
+          expect { send_session_reminder }.to deliver_email(
+            :session_school_reminder
+          ).with(
+            delivery_params.merge(
+              programme_types: consented_programmes.map(&:type)
+            )
+          )
+        end
+
+        it "enqueues a text per parent" do
+          expect { send_session_reminder }.to deliver_sms(
+            :session_school_reminder
+          ).with(
+            delivery_params.merge(
+              programme_types: consented_programmes.map(&:type)
+            )
+          )
+        end
+      end
+    end
+  end
 end

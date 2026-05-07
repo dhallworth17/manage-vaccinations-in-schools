@@ -1,8 +1,6 @@
 # frozen_string_literal: true
 
 class Notifier::Patient
-  extend ActiveSupport::Concern
-
   CONSENT_REMINDER_TYPES = %i[initial_reminder subsequent_reminder].freeze
 
   def initialize(patient)
@@ -165,6 +163,81 @@ class Notifier::Patient
     clinic_notification
   end
 
+  ##
+  # Determine whether a session reminder can be sent for this patient.
+  #
+  # This will be +true+ if the child is not already vaccinated for all the
+  # programmes in the session, and they've got consent to be vaccinated for
+  # any of the programmes, i.e. they will be seen by a nurse in the session.
+  def can_send_session_reminder?(session)
+    return false unless send_notification?(team: session.team)
+
+    return false if consented_parents_for_session(session).empty?
+
+    programmes = session.programmes_for(patient:)
+    academic_year = session.academic_year
+
+    all_vaccinated =
+      programmes.all? do |programme|
+        patient.programme_status(programme, academic_year:).vaccinated?
+      end
+
+    return false if all_vaccinated
+
+    programmes.any? do |programme|
+      patient.consent_given_and_safe_to_vaccinate?(programme:, academic_year:)
+    end
+  end
+
+  ##
+  # Send a session reminder to the parents of this patient who gave consent.
+  #
+  # A reminder will only be sent if the child is due to be seen by a nurse
+  # in the +session+, see +can_send_session_reminder?+ for more details
+  # on the criteria.
+  def send_session_reminder(session, session_date, sent_by:)
+    return unless can_send_session_reminder?(session)
+
+    consented_parents = consented_parents_for_session(session)
+
+    academic_year = session.academic_year
+
+    programmes =
+      session
+        .programmes_for(patient:)
+        .select do |programme|
+          patient.consent_given_and_safe_to_vaccinate?(
+            programme:,
+            academic_year:
+          )
+        end
+
+    SessionNotification.create!(
+      patient:,
+      session:,
+      session_date:,
+      type: :school_reminder,
+      sent_at: Time.current,
+      sent_by:
+    )
+
+    consented_parents.each do |parent|
+      params = {
+        "parent_id" => parent.id,
+        "patient_id" => patient.id,
+        "programme_types" => programmes.map(&:type),
+        "session_id" => session.id,
+        "sent_by_user_id" => sent_by&.id
+      }
+
+      EmailDeliveryJob.perform_async("session_school_reminder", params)
+
+      next unless parent.phone_receive_updates
+
+      SMSDeliveryJob.perform_async("session_school_reminder", params)
+    end
+  end
+
   private
 
   attr_reader :patient
@@ -175,6 +248,26 @@ class Notifier::Patient
 
   def parents
     @parents ||= patient.parents.select(&:contactable?).uniq
+  end
+
+  def consented_parents_for_session(session)
+    academic_year = session.academic_year
+
+    parents =
+      session
+        .programmes_for(patient:)
+        .flat_map do |programme|
+          ConsentGrouper
+            .call(
+              patient.consents,
+              programme_type: programme.type,
+              academic_year:
+            )
+            .select(&:response_given?)
+            .filter_map(&:parent)
+        end
+
+    parents.select(&:contactable?).uniq
   end
 
   def filter_programmes_notify_parents(programmes)

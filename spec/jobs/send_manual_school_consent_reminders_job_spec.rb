@@ -95,8 +95,7 @@ describe SendManualSchoolConsentRemindersJob do
     let(:patient) { create(:patient, :deceased, parents:) }
 
     it "doesn't send any notifications" do
-      expect(SessionNotification).not_to receive(:create_and_send!)
-      perform
+      expect { perform }.not_to change(ConsentNotification, :count)
     end
   end
 
@@ -104,8 +103,7 @@ describe SendManualSchoolConsentRemindersJob do
     let(:patient) { create(:patient, :invalidated, parents:) }
 
     it "doesn't send any notifications" do
-      expect(SessionNotification).not_to receive(:create_and_send!)
-      perform
+      expect { perform }.not_to change(ConsentNotification, :count)
     end
   end
 
@@ -113,8 +111,7 @@ describe SendManualSchoolConsentRemindersJob do
     let(:patient) { create(:patient, :restricted, parents:) }
 
     it "doesn't send any notifications" do
-      expect(SessionNotification).not_to receive(:create_and_send!)
-      perform
+      expect { perform }.not_to change(ConsentNotification, :count)
     end
   end
 
@@ -122,8 +119,7 @@ describe SendManualSchoolConsentRemindersJob do
     let(:patient) { create(:patient, :archived, parents:, team:) }
 
     it "doesn't send any notifications" do
-      expect(SessionNotification).not_to receive(:create_and_send!)
-      perform
+      expect { perform }.not_to change(ConsentNotification, :count)
     end
   end
 end
