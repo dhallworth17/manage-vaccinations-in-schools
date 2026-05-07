@@ -1,0 +1,8 @@
+organisation:
+  ods_code: RWX
+
+team:
+  name: Berkshire Healthcare NHS Foundation Trust
+  workgroup: berkshiremavisnr
+  type: national_reporting
+  national_reporting_cut_off_date: 2026-06-01
