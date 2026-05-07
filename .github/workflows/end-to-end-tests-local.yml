@@ -96,4 +96,4 @@ jobs:
         run: |
           uv run playwright install --with-deps chromium
       - name: Run tests
-        run: bin/e2e -n 2 --reruns 2
+        run: mavis_test_repo=${{ env.MAVIS_TEST_REPO }} bin/e2e -n 2 --reruns 2
