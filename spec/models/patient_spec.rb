@@ -1293,6 +1293,72 @@ describe Patient do
         ).to(false)
       end
     end
+
+    describe "gender_code" do
+      let(:pds_patient) do
+        PDS::Patient.new(nhs_number: "0123456789", gender: pds_gender)
+      end
+
+      let(:patient) { create(:patient, nhs_number: "0123456789", gender_code:) }
+
+      context "when PDS returns male and Mavis has not_known" do
+        let(:pds_gender) { "male" }
+        let(:gender_code) { :not_known }
+
+        it "updates gender_code to male" do
+          expect { update_from_pds! }.to change(patient, :gender_code).from(
+            "not_known"
+          ).to("male")
+        end
+      end
+
+      context "when PDS returns female and Mavis has not_specified" do
+        let(:pds_gender) { "female" }
+        let(:gender_code) { :not_specified }
+
+        it "updates gender_code to female" do
+          expect { update_from_pds! }.to change(patient, :gender_code).from(
+            "not_specified"
+          ).to("female")
+        end
+      end
+
+      context "when PDS returns female and Mavis already has male" do
+        let(:pds_gender) { "female" }
+        let(:gender_code) { :male }
+
+        it "does not change gender_code" do
+          expect { update_from_pds! }.not_to change(patient, :gender_code)
+        end
+      end
+
+      context "when PDS returns other and Mavis has not_known" do
+        let(:pds_gender) { "other" }
+        let(:gender_code) { :not_known }
+
+        it "does not change gender_code" do
+          expect { update_from_pds! }.not_to change(patient, :gender_code)
+        end
+      end
+
+      context "when PDS returns unknown and Mavis has not_known" do
+        let(:pds_gender) { "unknown" }
+        let(:gender_code) { :not_known }
+
+        it "does not change gender_code" do
+          expect { update_from_pds! }.not_to change(patient, :gender_code)
+        end
+      end
+
+      context "when PDS returns nil and Mavis has not_known" do
+        let(:pds_gender) { nil }
+        let(:gender_code) { :not_known }
+
+        it "does not change gender_code" do
+          expect { update_from_pds! }.not_to change(patient, :gender_code)
+        end
+      end
+    end
   end
 
   describe "#invalidate!" do

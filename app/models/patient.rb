@@ -667,6 +667,11 @@ class Patient < ApplicationRecord
         self.gp_practice = nil
       end
 
+      if %w[male female].include?(pds_patient.gender) &&
+           %w[not_known not_specified].include?(gender_code)
+        self.gender_code = pds_patient.gender
+      end
+
       self.updated_from_pds_at = Time.current
 
       save!

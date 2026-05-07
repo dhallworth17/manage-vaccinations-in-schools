@@ -38,8 +38,24 @@ describe PDS::Patient do
             date_of_birth: Date.new(2010, 10, 22),
             date_of_death: Date.new(2010, 10, 22),
             restricted: true,
-            gp_ods_code: "Y12345"
+            gp_ods_code: "Y12345",
+            gender: "female"
           )
+        end
+
+        context "when gender is missing from the response" do
+          let(:json_response) do
+            JSON
+              .parse(
+                file_fixture("pds/get-patient-response-deceased.json").read
+              )
+              .except("gender")
+              .to_json
+          end
+
+          it "leaves gender as nil" do
+            expect(find).to have_attributes(gender: nil)
+          end
         end
       end
     end
@@ -97,7 +113,8 @@ describe PDS::Patient do
             date_of_birth: Date.new(1939, 1, 9),
             date_of_death: nil,
             restricted: false,
-            gp_ods_code: "H81109"
+            gp_ods_code: "H81109",
+            gender: "female"
           )
         end
       end

@@ -8,7 +8,8 @@ class PDS::Patient
                 :date_of_birth,
                 :date_of_death,
                 :restricted,
-                :gp_ods_code
+                :gp_ods_code,
+                :gender
 
   class << self
     def find(nhs_number)
@@ -58,7 +59,8 @@ class PDS::Patient
         restricted:
           response.dig("meta", "security")&.any? { _1["code"] == "R" },
         gp_ods_code:
-          response.dig("generalPractitioner", 0, "identifier", "value")
+          response.dig("generalPractitioner", 0, "identifier", "value"),
+        gender: response["gender"]
       )
     end
   end
