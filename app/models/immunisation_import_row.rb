@@ -121,41 +121,12 @@ class ImmunisationImportRow
   def to_vaccination_record
     return if invalid? || national_reporting_not_administered? || patient.nil?
 
-    vaccination_record =
-      if uuid.present?
-        VaccinationRecord
-          .find_by!(uuid: uuid.to_s)
-          .tap { it.stage_changes(attributes) }
-      else
-        VaccinationRecord.find_or_initialize_by(deduplication_attributes)
-      end
+    vaccination_record = find_or_initialize_vaccination_record
 
     if vaccination_record.persisted?
-      vaccination_record.stage_changes(attributes_to_stage_if_already_exists)
-      should_stage_delivery_attributes =
-        vaccination_record.pending_changes? ||
-          (
-            (
-              vaccination_record.delivery_site.present? &&
-                delivery_site_value.present?
-            ) ||
-              (
-                vaccination_record.delivery_method.present? &&
-                  delivery_method_value.present?
-              )
-          )
-      if should_stage_delivery_attributes
-        vaccination_record.stage_changes(delivery_attributes)
-      else
-        vaccination_record.assign_attributes(delivery_attributes.compact)
-      end
+      update_existing_vaccination_record(vaccination_record)
     else
-      # Postgres UUID generation is skipped in bulk import
-      vaccination_record.uuid = SecureRandom.uuid
-
-      vaccination_record.assign_attributes(
-        attributes_to_stage_if_already_exists.merge!(delivery_attributes)
-      )
+      assign_new_vaccination_record_attributes(vaccination_record)
     end
 
     vaccination_record
@@ -339,6 +310,60 @@ class ImmunisationImportRow
   private
 
   delegate :organisation, to: :team
+
+  def find_or_initialize_vaccination_record
+    if uuid.present?
+      VaccinationRecord
+        .find_by!(uuid: uuid.to_s)
+        .tap do |vaccination_record|
+          vaccination_record.stage_changes(attributes)
+        end
+    else
+      VaccinationRecord.find_or_initialize_by(deduplication_attributes)
+    end
+  end
+
+  def update_existing_vaccination_record(vaccination_record)
+    if vaccination_record.fills_missing_values_only?(
+         attributes_to_stage_if_already_exists
+       )
+      vaccination_record.assign_attributes(
+        attributes_to_stage_if_already_exists.compact
+      )
+    else
+      vaccination_record.stage_changes(attributes_to_stage_if_already_exists)
+    end
+
+    if should_stage_delivery_attributes?(vaccination_record)
+      vaccination_record.stage_changes(delivery_attributes)
+    else
+      vaccination_record.assign_attributes(delivery_attributes.compact)
+    end
+  end
+
+  def assign_new_vaccination_record_attributes(vaccination_record)
+    # Postgres UUID generation is skipped in bulk import
+    vaccination_record.uuid = SecureRandom.uuid
+
+    vaccination_record.assign_attributes(
+      attributes_to_stage_if_already_exists.merge!(delivery_attributes)
+    )
+  end
+
+  def should_stage_delivery_attributes?(vaccination_record)
+    vaccination_record.pending_changes? ||
+      delivery_site_present_on_record_and_import?(vaccination_record) ||
+      delivery_method_present_on_record_and_import?(vaccination_record)
+  end
+
+  def delivery_site_present_on_record_and_import?(vaccination_record)
+    vaccination_record.delivery_site.present? && delivery_site_value.present?
+  end
+
+  def delivery_method_present_on_record_and_import?(vaccination_record)
+    vaccination_record.delivery_method.present? &&
+      delivery_method_value.present?
+  end
 
   def location
     if national_reporting?
