@@ -5,6 +5,8 @@ module LocationSearchFormConcern
 
   include Pagy::Backend
 
+  included { include SearchQueryRedirectConcern }
+
   def set_location_search_form
     @form =
       LocationSearchForm.new(
@@ -17,6 +19,6 @@ module LocationSearchFormConcern
   private
 
   def location_search_form_params
-    params.permit(:_clear, :phase, :q)
+    params.permit(:_clear, :phase, :query)
   end
 end

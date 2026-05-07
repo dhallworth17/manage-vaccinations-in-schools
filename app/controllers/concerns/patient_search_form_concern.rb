@@ -5,6 +5,8 @@ module PatientSearchFormConcern
 
   include Pagy::Backend
 
+  included { include SearchQueryRedirectConcern }
+
   def set_patient_search_form
     @form =
       PatientSearchForm.new(
@@ -30,7 +32,7 @@ module PatientSearchFormConcern
       :missing_nhs_number,
       :patient_specific_direction_status,
       :programme_status_group,
-      :q,
+      :query,
       :registration_status,
       programme_statuses: [],
       programme_types: [],

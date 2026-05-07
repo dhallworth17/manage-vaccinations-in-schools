@@ -32,7 +32,7 @@ describe PatientSearchForm do
   let(:patient_specific_direction_status) { nil }
   let(:programme_statuses) { nil }
   let(:programme_types) { nil }
-  let(:q) { nil }
+  let(:query) { nil }
   let(:registration_status) { nil }
   let(:vaccine_criteria) { nil }
   let(:year_groups) { nil }
@@ -49,7 +49,7 @@ describe PatientSearchForm do
       patient_specific_direction_status:,
       programme_statuses:,
       programme_types:,
-      q:,
+      query:,
       registration_status:,
       vaccine_criteria:,
       year_groups:
@@ -267,7 +267,7 @@ describe PatientSearchForm do
       end
 
       context "with no search query" do
-        let(:q) { nil }
+        let(:query) { nil }
 
         it "sorts alphabetically by name" do
           expect(form.apply(scope)).to eq(
@@ -277,7 +277,7 @@ describe PatientSearchForm do
       end
 
       context "with some search query" do
-        let(:q) { "Harry Potter" }
+        let(:query) { "Harry Potter" }
 
         it "sorts by similarity" do
           expect(form.apply(scope)).to eq([patient_a, patient_b, patient_c])
@@ -400,14 +400,14 @@ describe PatientSearchForm do
           current_user:,
           request_path:,
           request_session:,
-          "q" => "John"
+          "query" => "John"
         )
 
         described_class.new(
           current_user:,
           request_path: another_path,
           request_session:,
-          q: "Jane"
+          query: "Jane"
         )
 
         described_class.new(
@@ -419,7 +419,7 @@ describe PatientSearchForm do
 
         form1 =
           described_class.new(current_user:, request_session:, request_path:)
-        expect(form1.q).to be_nil
+        expect(form1.query).to be_nil
 
         form2 =
           described_class.new(
@@ -427,7 +427,7 @@ describe PatientSearchForm do
             request_session:,
             request_path: another_path
           )
-        expect(form2.q).to eq("Jane")
+        expect(form2.query).to eq("Jane")
       end
     end
 
@@ -435,20 +435,20 @@ describe PatientSearchForm do
       it "persists filters to be loaded in subsequent requests" do
         described_class.new(
           current_user:,
-          q: "John",
+          query: "John",
           request_session:,
           request_path:
         )
 
         form =
           described_class.new(current_user:, request_session:, request_path:)
-        expect(form.q).to eq("John")
+        expect(form.query).to eq("John")
       end
 
       it "overwrites previously stored filters" do
         described_class.new(
           current_user:,
-          q: "John",
+          query: "John",
           request_session:,
           request_path:
         )
@@ -456,15 +456,15 @@ describe PatientSearchForm do
         form1 =
           described_class.new(
             current_user:,
-            q: "Jane",
+            query: "Jane",
             request_session:,
             request_path:
           )
-        expect(form1.q).to eq("Jane")
+        expect(form1.query).to eq("Jane")
 
         form2 =
           described_class.new(current_user:, request_session:, request_path:)
-        expect(form2.q).to eq("Jane")
+        expect(form2.query).to eq("Jane")
       end
 
       it "overrides session filters when 'Any' option is selected (empty string)" do
@@ -498,7 +498,7 @@ describe PatientSearchForm do
       before do
         described_class.new(
           current_user:,
-          q: "John",
+          query: "John",
           year_groups: %w[8 11],
           programme_statuses: %w[needs_triage],
           request_session:,
@@ -510,7 +510,7 @@ describe PatientSearchForm do
         form =
           described_class.new(current_user:, request_session:, request_path:)
 
-        expect(form.q).to eq("John")
+        expect(form.query).to eq("John")
         expect(form.year_groups).to eq([8, 11])
         expect(form.programme_statuses).to eq(%w[needs_triage])
       end
@@ -520,20 +520,20 @@ describe PatientSearchForm do
       it "maintains separate filters for different paths" do
         described_class.new(
           current_user:,
-          q: "John",
+          query: "John",
           request_session:,
           request_path:
         )
         described_class.new(
           current_user:,
-          q: "Jane",
+          query: "Jane",
           request_session:,
           request_path: another_path
         )
 
         form1 =
           described_class.new(current_user:, request_session:, request_path:)
-        expect(form1.q).to eq("John")
+        expect(form1.query).to eq("John")
 
         form2 =
           described_class.new(
@@ -541,7 +541,7 @@ describe PatientSearchForm do
             request_session:,
             request_path: another_path
           )
-        expect(form2.q).to eq("Jane")
+        expect(form2.query).to eq("Jane")
       end
     end
   end
