@@ -348,7 +348,7 @@ jobs:
           jq --arg f "$family_name" '.family = $f' "$file_path" > tmpfile && mv tmpfile "$file_path"
       - name: Deploy ${{ matrix.service }} service
         id: ecs-deploy
-        uses: aws-actions/amazon-ecs-deploy-task-definition@fc8fc60f3a60ffd500fcb13b209c59d221ac8c8c # v2.6.1
+        uses: aws-actions/amazon-ecs-deploy-task-definition@a310a830f5c14e583e35d84e4e1ec7dd177c3c9c # v2.6.2
         with:
           task-definition: ${{ runner.temp }}/${{ matrix.service }}-task-definition.json
           cluster: ${{ env.cluster_name }}

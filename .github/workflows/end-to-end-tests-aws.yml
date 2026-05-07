@@ -197,7 +197,7 @@ jobs:
           echo "run-task-subnets=$subnet_id" >> "$GITHUB_OUTPUT"
           echo "run-task-security-groups=$security_group_id" >> "$GITHUB_OUTPUT"
       - name: Deploy task definition
-        uses: aws-actions/amazon-ecs-deploy-task-definition@fc8fc60f3a60ffd500fcb13b209c59d221ac8c8c # v2.6.1
+        uses: aws-actions/amazon-ecs-deploy-task-definition@a310a830f5c14e583e35d84e4e1ec7dd177c3c9c # v2.6.2
         id: run-task
         with:
           task-definition: "assurance-testing-mavis-development-task-definition.json"
