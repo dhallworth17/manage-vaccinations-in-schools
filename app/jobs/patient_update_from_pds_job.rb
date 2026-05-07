@@ -73,10 +73,10 @@ class PatientUpdateFromPDSJob < ApplicationJob
     search_results.each do |result|
       PDSSearchResult.create!(
         patient_id: patient.id,
-        step: result[:step],
-        result: result[:result],
-        nhs_number: result[:nhs_number],
-        created_at: result[:created_at]
+        step: result.fetch("step"),
+        result: result.fetch("result"),
+        nhs_number: result.fetch("nhs_number"),
+        created_at: result.fetch("created_at")
       )
     end
   end
