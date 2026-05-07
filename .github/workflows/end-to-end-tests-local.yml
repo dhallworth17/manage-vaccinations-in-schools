@@ -16,7 +16,7 @@ jobs:
           - 5432:5432
     env:
       MAVIS_TEST_REPO: testing-repository
-      DATABASE_URL: postgresql://postgres:postgres@localhost:5432
+      DATABASE_URL: postgis://postgres:postgres@localhost:5432
       DATABASE_USER: postgres
       DATABASE_PASSWORD: postgres
       RAILS_ENV: end_to_end
