@@ -131,7 +131,7 @@ jobs:
           echo "digest=$digest" >> "$GITHUB_OUTPUT"
       - name: Populate task definition
         id: create-task-definition
-        uses: aws-actions/amazon-ecs-render-task-definition@77954e213ba1f9f9cb016b86a1d4f6fcdea0d57e # v1.8.4
+        uses: aws-actions/amazon-ecs-render-task-definition@6853cfae8c3a7d978fbf68b5a55453395541dfbb # v1.8.5
         with:
           task-definition-family:
             mavis-${{ matrix.service }}-task-definition-${{ inputs.environment }}-template

@@ -151,7 +151,7 @@ jobs:
           aws-region: eu-west-2
       - name: Render task definition web
         id: render-task-definition-web
-        uses: aws-actions/amazon-ecs-render-task-definition@77954e213ba1f9f9cb016b86a1d4f6fcdea0d57e # v1.8.4
+        uses: aws-actions/amazon-ecs-render-task-definition@6853cfae8c3a7d978fbf68b5a55453395541dfbb # v1.8.5
         with:
           task-definition-family: assurance-testing-mavis-development-task-definition-template
           container-name: mavis-development-web
@@ -161,7 +161,7 @@ jobs:
             needs.check-development-image-presence.outputs.application-image-git-ref }}
       - name: Render task definition database
         id: render-task-definition-database
-        uses: aws-actions/amazon-ecs-render-task-definition@77954e213ba1f9f9cb016b86a1d4f6fcdea0d57e # v1.8.4
+        uses: aws-actions/amazon-ecs-render-task-definition@6853cfae8c3a7d978fbf68b5a55453395541dfbb # v1.8.5
         with:
           task-definition: ${{ steps.render-task-definition-web.outputs.task-definition }}
           container-name: mavis-development-db
@@ -171,7 +171,7 @@ jobs:
             needs.check-database-image-presence.outputs.db_git_ref_sha }}
       - name: Render task definition sidekiq
         id: render-task-definition-sidekiq
-        uses: aws-actions/amazon-ecs-render-task-definition@77954e213ba1f9f9cb016b86a1d4f6fcdea0d57e # v1.8.4
+        uses: aws-actions/amazon-ecs-render-task-definition@6853cfae8c3a7d978fbf68b5a55453395541dfbb # v1.8.5
         with:
           task-definition: ${{ steps.render-task-definition-database.outputs.task-definition }}
           container-name: mavis-development-sidekiq
