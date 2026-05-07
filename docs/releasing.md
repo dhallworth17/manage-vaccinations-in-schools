@@ -21,34 +21,32 @@ given:
    `git rev-list --oneline main ^next`) or jj (`jj log -r '::main ~ ::next'`),
    or by [comparing the branches on
    GitHub](https://github.com/nhsuk/manage-vaccinations-in-schools/compare/next...main).
-2. Create a draft release by running the [`Draft new release`
-   workflow](https://github.com/nhsuk/manage-vaccinations-in-schools/actions/workflows/draft-new-release.yml).
-   This creates a draft release in GitHub with initial release notes.
-3. Update the release notes with information about the changes. This is
-   generated from the Jira tickets by a team member.
-4. Publish the release in GitHub. This will create the tag.
-5. Check the notes for pre and post-release tasks and ensure these are performed
+1. Create a draft release in GitHub and update the release notes with
+   information about the changes. This is generated from the Jira tickets by
+   a team member.
+1. Publish the release in GitHub. This will create the tag.
+1. Check the notes for pre and post-release tasks and ensure these are performed
    before and after releasing to the environments below.
-6. Deploy the release to the `preview` and `training` envs, first checking that
+1. Deploy the release to the `preview` and `training` envs, first checking that
    they haven't had a specific branch deployed to them (check [recent
    deploys](https://github.com/nhsuk/manage-vaccinations-in-schools/actions/workflows/deploy.yml)).
    This can be used as a test that the tag deploys as expected.
-7. If there are migrations that need testing (e.g. a db or data migrations),
+1. If there are migrations that need testing (e.g. a db or data migrations),
    deploy this release to `data-replication` and test the performance of the
    migration(s) there.
-8. Perform pre-release tasks.
-9. Run the [Deploy
+1. Perform pre-release tasks.
+1. Run the [Deploy
    workflow](https://github.com/NHSDigital/manage-vaccinations-in-schools/actions/workflows/deploy.yml)
    to deploy to production.
-10. Run the [Deploy application
-    workflow](https://github.com/NHSDigital/manage-vaccinations-in-schools-reporting/actions/workflows/deploy-application.yml)
-    for the reporting app. You may need to ask other team members for the
-    correct tag.
-11. Smoke test: login to the production service to ensure it looks normal.
-12. Perform post-release tasks.
-13. Fast-forward or reset `release` to the release tag.
-14. Update the service management channel on NHSE Slack.
-15. Update the topic in the Mavis tech channel to reflect the new version.
+1. Run the [Deploy application
+   workflow](https://github.com/NHSDigital/manage-vaccinations-in-schools-reporting/actions/workflows/deploy-application.yml)
+   for the reporting app. You may need to ask other team members for the
+   correct tag.
+1. Smoke test: login to the production service to ensure it looks normal.
+1. Perform post-release tasks.
+1. Fast-forward or reset `release` to the release tag.
+1. Update the service management channel on NHSE Slack.
+1. Update the topic in the Mavis tech channel to reflect the new version.
 
 Additional notes below.
 
