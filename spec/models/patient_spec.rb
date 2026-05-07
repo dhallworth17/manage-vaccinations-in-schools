@@ -1131,17 +1131,30 @@ describe Patient do
       end
     end
 
-    it "sets nhs_number_first_added_at when the NHS number was assigned before save" do
-      patient =
-        create(:patient, nhs_number: nil, nhs_number_first_added_at: nil)
-      patient.nhs_number = "9449310475"
-      pds_patient = PDS::Patient.new(nhs_number: "9449310475")
+    # These can end up being over 95% of the records in the audits table
+    it "does not create an audit entry if nothing has changed" do
+      expect { update_from_pds! }.not_to change(patient.audits, :count)
+    end
 
-      freeze_time do
-        expect { patient.update_from_pds!(pds_patient) }.to change(
-          patient,
-          :nhs_number_first_added_at
-        ).from(nil).to(Time.current)
+    context "when the NHS number was previously nil" do
+      before { patient.nhs_number = "9449310475" }
+
+      let(:patient) do
+        create(:patient, nhs_number: nil, nhs_number_first_added_at: nil)
+      end
+      let(:pds_patient) { PDS::Patient.new(nhs_number: "9449310475") }
+
+      it "sets nhs_number_first_added_at when the NHS number was assigned before save" do
+        freeze_time do
+          expect { patient.update_from_pds!(pds_patient) }.to change(
+            patient,
+            :nhs_number_first_added_at
+          ).from(nil).to(Time.current)
+        end
+      end
+
+      it "creates an audit record including the updated_from_pds_at timestamp" do
+        expect { update_from_pds! }.to change(patient.audits, :count).by(1)
       end
     end
 

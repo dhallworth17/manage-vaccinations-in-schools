@@ -65,7 +65,7 @@ class Patient < ApplicationRecord
   include Invalidatable
   include PendingChangesConcern
 
-  audited
+  audited if: :not_solely_changing_updated_from_pds_at
   has_associated_audits
 
   belongs_to :gp_practice, class_name: "Location", optional: true
@@ -896,5 +896,11 @@ class Patient < ApplicationRecord
     if should_generate_important_notice?
       ImportantNoticeGeneratorJob.perform_async([id])
     end
+  end
+
+  def not_solely_changing_updated_from_pds_at
+    audited_attributes =
+      changed_attributes.keys - self.class.non_audited_columns
+    audited_attributes != ["updated_from_pds_at"]
   end
 end
