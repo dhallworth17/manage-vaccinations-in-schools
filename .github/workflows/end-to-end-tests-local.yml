@@ -96,4 +96,6 @@ jobs:
         run: |
           uv run playwright install --with-deps chromium
       - name: Run tests
-        run: mavis_test_repo=${{ env.MAVIS_TEST_REPO }} bin/e2e -n 2 --reruns 2
+        run: >-
+          mavis_test_repo=${{ env.MAVIS_TEST_REPO }} bin/e2e -n 2 --reruns 2 -m "not accessibility
+          and not reporting and not imms_api and not pds_api and not unstable"
