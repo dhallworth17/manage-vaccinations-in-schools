@@ -15,8 +15,7 @@ module SMSExpectations
   end
 
   def sms_deliveries
-    perform_enqueued_jobs
-
+    SMSDeliveryJob.drain
     SMSDeliveryJob.deliveries
   end
 end

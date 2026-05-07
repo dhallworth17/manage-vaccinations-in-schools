@@ -97,6 +97,58 @@ describe AppActivityLogComponent do
                      by: "JOY, Nurse"
   end
 
+  describe "unarchive events" do
+    let(:component) { described_class.new(patient:, team:) }
+
+    context "when unarchived via cohort upload" do
+      before do
+        create(
+          :archive_reason,
+          :imported_in_error,
+          created_at: Time.zone.local(2024, 6, 1, 12),
+          created_by: user,
+          unarchived_at: Time.zone.local(2024, 9, 1, 10),
+          unarchived_by: user,
+          unarchive_reason: :upload,
+          team:,
+          patient:
+        )
+      end
+
+      include_examples "card",
+                       title: "Record archived: Imported in error",
+                       date: "1 June 2024 at 12:00pm",
+                       by: "JOY, Nurse"
+
+      include_examples "card",
+                       title:
+                         "Record unarchived: Child included in a cohort or class list upload",
+                       date: "1 September 2024 at 10:00am",
+                       by: "JOY, Nurse"
+    end
+
+    context "when unarchived via patient merge" do
+      before do
+        create(
+          :archive_reason,
+          :imported_in_error,
+          created_at: Time.zone.local(2024, 6, 1, 12),
+          unarchived_at: Time.zone.local(2024, 9, 1, 10),
+          unarchive_reason: :patient_merge,
+          team:,
+          patient:
+        )
+      end
+
+      it "does not render an unarchive event" do
+        expect(rendered).not_to have_css(
+          ".app-timeline__header",
+          text: "Record unarchived"
+        )
+      end
+    end
+  end
+
   describe "consent given by parents" do
     before do
       create(
@@ -807,6 +859,23 @@ describe AppActivityLogComponent do
                        "The record for DOE, Sarah (date of birth 1 January 2010) was merged with the record " \
                          "for DOE, Sarah (date of birth 1 January 2010) because they have the same NHS number " \
                          "(9999075320).",
+                     by: "JOY, Nurse"
+  end
+
+  describe "parent relationship removal events" do
+    let(:component) { described_class.new(patient:, team:) }
+
+    before do
+      relationship =
+        patient.parent_relationships.includes(:parent).find_by!(parent: mum)
+
+      Audited.audit_class.as_user(user) { relationship.destroy! }
+    end
+
+    include_examples "card",
+                     title: "Parent relationship removed",
+                     date: "1 January 2026 at 12:00am",
+                     notes: "Jane Doe (mum) removed from child record",
                      by: "JOY, Nurse"
   end
 

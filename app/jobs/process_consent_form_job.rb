@@ -3,8 +3,7 @@
 class ProcessConsentFormJob < ApplicationJob
   include PDSThrottlingConcern
 
-  queue_as :consents
-  retry_on Faraday::ServerError, wait: :polynomially_longer
+  sidekiq_options queue: :consents
 
   # We may enqueue this job more than once for the same ConsentForm during the parent
   # consent journey (e.g. once when the consent is recorded, and again after the optional

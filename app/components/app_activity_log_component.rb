@@ -19,11 +19,11 @@ class AppActivityLogComponent < ViewComponent::Base
             <% if (subtitle = event[:subtitle]).present? %>
               <%= subtitle %>
             <% else %>
-              <% if (by = event[:by]) %>
-                <%= by.respond_to?(:full_name) ? by.full_name : by %>
-                &middot;
-              <% end %>
               <%= event[:at].to_fs(:long) %>
+              <% if (by = event[:by]) %>
+                &middot;
+                <%= by.respond_to?(:full_name) ? by.full_name : by %>
+              <% end %>
             <% end %>
 
             <% if event[:invalidated] %></s><% end %>
@@ -57,11 +57,13 @@ class AppActivityLogComponent < ViewComponent::Base
       gillick_assessment_events,
       note_events,
       notify_events,
+      parent_relationship_events,
       patient_merge_events,
       patient_specific_direction_events,
       pre_screening_events,
       session_events,
       triage_events,
+      unarchive_events,
       vaccination_events
     ].flatten.sort_by { it[:at] }.reverse
   end
@@ -75,6 +77,19 @@ class AppActivityLogComponent < ViewComponent::Base
         by: archive_reason.created_by
       }
     end
+  end
+
+  def unarchive_events
+    archive_reasons
+      .select { it.unarchive_reason == "upload" }
+      .map do |archive_reason|
+        {
+          title:
+            "Record unarchived: Child included in a cohort or class list upload",
+          at: archive_reason.unarchived_at,
+          by: archive_reason.unarchived_by
+        }
+      end
   end
 
   def consent_events
@@ -270,6 +285,17 @@ class AppActivityLogComponent < ViewComponent::Base
     end
   end
 
+  def parent_relationship_events
+    parent_relationship_audits.map do |audit|
+      {
+        title: "Parent relationship removed",
+        body: audit.comment,
+        at: audit.created_at,
+        by: audit.user
+      }
+    end
+  end
+
   def patient_merge_events
     patient_merge_log_entries.map do |patient_merge_log_entry|
       {
@@ -443,7 +469,10 @@ class AppActivityLogComponent < ViewComponent::Base
     return [] if include_programme_specific_events?
 
     @archive_reasons ||=
-      @patient.archive_reasons.where(team: @team).includes(:created_by)
+      @patient
+        .archive_reasons
+        .where(team: @team)
+        .includes(:created_by, :unarchived_by)
   end
 
   def patient_merge_log_entries
@@ -534,6 +563,16 @@ class AppActivityLogComponent < ViewComponent::Base
             scope
           end
         end
+  end
+
+  def parent_relationship_audits
+    return [] if include_programme_specific_events?
+
+    patient
+      .associated_audits
+      .destroys
+      .where(auditable_type: "ParentRelationship")
+      .includes(:user)
   end
 
   def patient_locations

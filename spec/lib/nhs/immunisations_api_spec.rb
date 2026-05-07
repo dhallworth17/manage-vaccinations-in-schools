@@ -170,9 +170,7 @@ describe NHS::ImmunisationsAPI do
   end
 
   describe "sync_immunisation" do
-    subject(:perform_now) do
-      described_class.sync_immunisation(vaccination_record)
-    end
+    subject(:perform) { described_class.sync_immunisation(vaccination_record) }
 
     before do
       allow(described_class).to receive(:next_sync_action).and_return(
@@ -183,7 +181,7 @@ describe NHS::ImmunisationsAPI do
       allow(described_class).to receive(:update_immunisation)
       allow(described_class).to receive(:delete_immunisation)
 
-      perform_now
+      perform
     end
 
     context "the next sync action is create" do

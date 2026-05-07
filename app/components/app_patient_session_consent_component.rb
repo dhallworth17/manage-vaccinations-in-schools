@@ -18,13 +18,8 @@ class AppPatientSessionConsentComponent < ViewComponent::Base
 
   def programme_type = programme.type
 
-  def colour
-    I18n.t(consent_status_value, scope: %i[status consent colour])
-  end
-
   def heading
-    status_text = I18n.t(consent_status_value, scope: %i[status consent label])
-    "#{consent_status_generator.programme.name}: #{status_text}"
+    "Consent for #{consent_status_generator.programme.name} vaccination"
   end
 
   def consent_status_value
@@ -65,7 +60,8 @@ class AppPatientSessionConsentComponent < ViewComponent::Base
         vaccination_records:,
         parents:,
         sessions: [session],
-        consent_notifications:
+        consent_notifications:,
+        notify_log_entries:
       )
   end
 
@@ -80,7 +76,8 @@ class AppPatientSessionConsentComponent < ViewComponent::Base
         vaccination_records:,
         parents:,
         sessions: [session],
-        consent_notifications:
+        consent_notifications:,
+        notify_log_entries:
       )
   end
 
@@ -145,5 +142,12 @@ class AppPatientSessionConsentComponent < ViewComponent::Base
       .has_all_programmes_of([programme])
       .for_academic_year(academic_year)
       .order(sent_at: :desc)
+  end
+
+  def notify_log_entries
+    patient
+      .notify_log_entries
+      .includes(:notify_log_entry_programmes)
+      .for_programme_type(programme_type)
   end
 end

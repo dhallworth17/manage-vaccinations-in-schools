@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class ImportantNoticeGeneratorJob < ApplicationJob
-  queue_as :cache
+  sidekiq_options queue: :cache
 
   BATCH_SIZE = 1000
 
@@ -11,7 +11,7 @@ class ImportantNoticeGeneratorJob < ApplicationJob
     restricted: :restricted_at
   }.freeze
 
-  def perform(patient_ids = nil)
+  def perform(patient_ids)
     scope = Patient.includes(:teams, vaccination_records: %i[team])
 
     if patient_ids.present?

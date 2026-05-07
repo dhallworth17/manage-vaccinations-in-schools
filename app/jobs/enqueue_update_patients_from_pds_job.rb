@@ -3,7 +3,7 @@
 class EnqueueUpdatePatientsFromPDSJob < ApplicationJob
   include SingleConcurrencyConcern
 
-  queue_as :pds
+  sidekiq_options queue: :pds
 
   def perform
     scope = Patient.not_deceased

@@ -571,7 +571,7 @@ describe "Manage children" do
 
   def and_the_important_notice_is_dismissed
     notice = @patient.important_notices.find_by(type: :invalidated)
-    perform_enqueued_jobs_while_exists(only: ImportantNoticeGeneratorJob)
+    perform_enqueued_jobs_while_exists(ImportantNoticeGeneratorJob)
     expect(notice.reload.dismissed_at).to be_present
   end
 
@@ -657,7 +657,7 @@ describe "Manage children" do
   end
 
   def then_i_see_the_community_clinic_session
-    expect(page).to have_content("Community clinic")
+    expect(page).to have_content("community clinic")
   end
 
   def when_i_go_to_the_dashboard

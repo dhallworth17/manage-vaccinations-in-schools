@@ -440,8 +440,8 @@ describe "Import child records", :pds do
   end
 
   def when_i_go_back_to_the_import_page
-    visit "/imports"
-    click_link "1 September 2025 at 12:00pm"
+    visit "/imports/records"
+    click_on_most_recent_import(CohortImport)
   end
 
   def when_i_click_on_alberts_pds_history
@@ -451,7 +451,10 @@ describe "Import child records", :pds do
   end
 
   def when_i_click_review_for(name)
-    within(:xpath, "//div[h3[contains(text(), 'Close matches')]]") do
+    within(
+      :xpath,
+      "//h2[contains(text(), 'Close matches')]/following-sibling::details[1]"
+    ) do
       within(:xpath, ".//tr[contains(., '#{name}')]") { click_link "Review" }
     end
   end
@@ -500,26 +503,6 @@ describe "Import child records", :pds do
     attach_file_fixture "class_import[csv]", "class_import/pds_extravaganza.csv"
     click_on "Continue"
     wait_for_import_to_complete(ClassImport)
-  end
-
-  def when_i_visit_the_import_page
-    visit "/"
-    click_link "Import", match: :first
-  end
-
-  def when_i_go_back_to_the_import_page
-    visit "/imports/records"
-
-    click_on_most_recent_import(CohortImport)
-  end
-
-  def when_i_click_review_for(name)
-    within(
-      :xpath,
-      "//h2[contains(text(), 'Close matches')]/following-sibling::details[1]"
-    ) do
-      within(:xpath, ".//tr[contains(., '#{name}')]") { click_link "Review" }
-    end
   end
 
   def and_i_start_adding_children_to_the_school
@@ -599,7 +582,7 @@ describe "Import child records", :pds do
   end
 
   def and_i_should_see_one_new_patient_created
-    perform_enqueued_jobs
+    Sidekiq::Job.drain_all
     expect(Patient.count).to eq(7)
   end
 
@@ -724,10 +707,8 @@ describe "Import child records", :pds do
   end
 
   def then_school_moves_are_created_appropriately
-    perform_enqueued_jobs
-    perform_enqueued_jobs
-
-    Sidekiq::Job.drain_all # PatientsAgedOutOfSchoolJob is Sidekiq-only
+    Sidekiq::Job.drain_all
+    Sidekiq::Job.drain_all
 
     charlie = Patient.find_by(given_name: "Charlie")
     charlie_move = SchoolMoveLogEntry.find_by(patient: charlie)

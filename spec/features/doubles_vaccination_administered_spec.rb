@@ -77,7 +77,7 @@ describe "MenACWY and Td/IPV vaccination" do
   end
 
   def and_i_record_the_vaccination(batch)
-    within all("form")[3] do
+    within all("form")[2] do
       within all("fieldset")[2] do
         choose "Yes"
         choose "Left arm (upper position)"
@@ -128,7 +128,7 @@ describe "MenACWY and Td/IPV vaccination" do
   end
 
   def when_vaccination_confirmations_are_sent
-    SendVaccinationConfirmationsJob.perform_now
+    SendVaccinationConfirmationsJob.new.perform
   end
 
   def then_an_email_is_sent_to_the_parent_confirming_the_vaccinations

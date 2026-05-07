@@ -150,13 +150,13 @@ class PatientImport < ApplicationRecord
   def process_no_postcode_changesets(changesets)
     changesets.find_each do |cs|
       cs.search_results << {
-        step: :no_fuzzy_with_history,
-        result: :no_postcode,
-        nhs_number: nil,
-        created_at: Time.current
+        "step" => "no_fuzzy_with_history",
+        "result" => "no_postcode",
+        "nhs_number" => nil,
+        "created_at" => Time.current.iso8601
       }
       cs.calculating_review!
-      ReviewPatientChangesetJob.perform_later(cs.id)
+      ReviewPatientChangesetJob.perform_async(cs.id)
     end
   end
 
@@ -170,15 +170,17 @@ class PatientImport < ApplicationRecord
 
     review_changesets.each do |cs|
       cs.calculating_review!
-      ReviewPatientChangesetJob.perform_later(cs.id)
+      ReviewPatientChangesetJob.perform_async(cs.id)
     end
   end
 
   def enqueue_pds_cascading_searches(changesets)
-    changesets.find_each do |cs|
-      PDSCascadingSearchJob.set(queue: :imports).perform_later(
-        cs,
-        queue: :imports
+    changesets.find_each do |changeset|
+      PDSCascadingSearchJob.set(queue: :imports).perform_async(
+        changeset.to_global_id.to_s,
+        nil,
+        nil,
+        "imports"
       )
     end
   end

@@ -22,6 +22,7 @@
 #  invalidated_at             :datetime
 #  local_authority_mhclg_code :string
 #  nhs_number                 :string
+#  nhs_number_first_added_at  :datetime
 #  pending_changes            :jsonb            not null
 #  preferred_family_name      :string
 #  preferred_given_name       :string
@@ -47,6 +48,7 @@
 #  index_patients_on_names_family_first                   (family_name,given_name)
 #  index_patients_on_names_given_first                    (given_name,family_name)
 #  index_patients_on_nhs_number                           (nhs_number) UNIQUE
+#  index_patients_on_nhs_number_first_added_at            (nhs_number_first_added_at)
 #  index_patients_on_pending_changes_not_empty            (id) WHERE (pending_changes <> '{}'::jsonb)
 #  index_patients_on_school_id                            (school_id)
 #
@@ -495,6 +497,7 @@ class Patient < ApplicationRecord
                it.blank? ? nil : it.normalise_whitespace.gsub(/\s/, "")
              end
 
+  before_validation :ensure_nhs_number_first_added_at
   after_update :sync_vaccinations_to_nhs_immunisations_api
   after_commit :generate_important_notice_if_needed, on: :update
   after_commit :search_vaccinations_from_nhs_immunisations_api, on: :update
@@ -511,14 +514,14 @@ class Patient < ApplicationRecord
 
   def archived?(team_id:)
     if archive_reasons.loaded?
-      archive_reasons.any? { it.team_id == team_id }
+      archive_reasons.any? { it.team_id == team_id && it.not_unarchived? }
     else
-      archive_reasons.exists?(team_id:)
+      archive_reasons.exists?(team_id:, unarchived_at: nil)
     end
   end
 
   def not_archived?(team:)
-    !archive_reasons.exists?(team:)
+    !archive_reasons.exists?(team:, unarchived_at: nil)
   end
 
   def year_group(academic_year:)
@@ -810,6 +813,15 @@ class Patient < ApplicationRecord
 
   def notifier = Notifier::Patient.new(self)
 
+  def ensure_nhs_number_first_added_at
+    return unless will_save_change_to_nhs_number?
+
+    old_nhs_number, new_nhs_number = nhs_number_change_to_be_saved
+    return unless old_nhs_number.blank? && new_nhs_number.present?
+
+    self.nhs_number_first_added_at ||= Time.current
+  end
+
   private
 
   def locations_are_correct_type
@@ -822,19 +834,24 @@ class Patient < ApplicationRecord
     end
   end
 
+  def destroy_childless_parents
+    parents_to_check = parents.to_a # Store parents before destroying relationships
+
+    # Manually destroy the parent_relationships associated with this Child
+    parent_relationships.each(&:destroy)
+
+    parents_to_check.each do |parent|
+      parent.destroy! if parent.parent_relationships.count.zero?
+    end
+  end
+
   def archive_due_to_deceased!
     archive_reasons =
       teams.map do |team|
         ArchiveReason.new(team:, patient: self, type: :deceased)
       end
 
-    ArchiveReason.import!(
-      archive_reasons,
-      on_duplicate_key_update: {
-        conflict_target: %i[team_id patient_id],
-        columns: %i[type]
-      }
-    )
+    ArchiveReason.import!(archive_reasons)
 
     PatientTeamUpdater.call(
       patient_scope: Patient.where(id:),
@@ -872,7 +889,7 @@ class Patient < ApplicationRecord
 
   def generate_important_notice_if_needed
     if should_generate_important_notice?
-      ImportantNoticeGeneratorJob.perform_later([id])
+      ImportantNoticeGeneratorJob.perform_async([id])
     end
   end
 end

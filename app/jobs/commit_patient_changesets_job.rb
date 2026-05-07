@@ -1,11 +1,9 @@
 # frozen_string_literal: true
 
-class CommitPatientChangesetsJob
-  include Sidekiq::Job
-  include Sidekiq::Throttled::Job
+class CommitPatientChangesetsJob < ApplicationJob
   include PatientImportConcern
 
-  queue_as :imports
+  sidekiq_options queue: :imports
 
   def perform(patient_changeset_ids)
     changesets =
@@ -102,7 +100,7 @@ class CommitPatientChangesetsJob
     import.calculating_re_review!
     import.changesets.needs_re_review.each do |changeset|
       changeset.calculating_review!
-      ReviewPatientChangesetJob.perform_later(changeset.id)
+      ReviewPatientChangesetJob.perform_async(changeset.id)
     end
   end
 end

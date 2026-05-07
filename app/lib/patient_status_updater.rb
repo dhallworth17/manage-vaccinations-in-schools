@@ -48,6 +48,7 @@ class PatientStatusUpdater < PatientScopedUpdater
             :attendance_record,
             :consent_notifications,
             :consents,
+            :notify_log_entries,
             :parents,
             :patient,
             :patient_locations,

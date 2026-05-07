@@ -44,13 +44,8 @@ class AppPatientSessionTriageComponent < ViewComponent::Base
 
   def programme_type = programme.type
 
-  def colour
-    I18n.t(triage_status_value, scope: %i[status triage colour])
-  end
-
   def heading
-    status_text = I18n.t(triage_status_value, scope: %i[status triage label])
-    "#{triage_status_generator.programme.name}: #{status_text}"
+    "Triage for #{triage_status_generator.programme.name} vaccination"
   end
 
   def triage_status_value
@@ -87,7 +82,8 @@ class AppPatientSessionTriageComponent < ViewComponent::Base
         vaccination_records:,
         parents:,
         sessions: [session],
-        consent_notifications:
+        consent_notifications:,
+        notify_log_entries:
       )
   end
 
@@ -101,7 +97,8 @@ class AppPatientSessionTriageComponent < ViewComponent::Base
         vaccination_records:,
         parents:,
         sessions: [session],
-        consent_notifications:
+        consent_notifications:,
+        notify_log_entries:
       )
   end
 
@@ -137,5 +134,12 @@ class AppPatientSessionTriageComponent < ViewComponent::Base
       .request
       .has_all_programmes_of([programme])
       .for_academic_year(academic_year)
+  end
+
+  def notify_log_entries
+    patient
+      .notify_log_entries
+      .includes(:notify_log_entry_programmes)
+      .for_programme_type(programme_type)
   end
 end

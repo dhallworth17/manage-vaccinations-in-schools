@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class BulkRemoveParentRelationshipsJob < ApplicationJob
-  queue_as :imports
+  sidekiq_options queue: :imports
 
   def perform(
     import_global_id,
@@ -45,7 +45,10 @@ class BulkRemoveParentRelationshipsJob < ApplicationJob
       CohortImportsParentRelationship.where(
         parent_relationship_id: parent_relationship_ids
       ).delete_all
-      parent_relationships_to_remove.each(&:destroy!)
+
+      Audited
+        .audit_class
+        .as_user(user) { parent_relationships_to_remove.each(&:destroy!) }
 
       Parent
         .where(id: parent_ids_to_check)

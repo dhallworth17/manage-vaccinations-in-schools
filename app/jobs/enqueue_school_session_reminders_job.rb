@@ -1,18 +1,17 @@
 # frozen_string_literal: true
 
 class EnqueueSchoolSessionRemindersJob < ApplicationJob
-  queue_as :notifications
+  sidekiq_options queue: :notifications
 
   def perform
-    sessions =
+    session_ids =
       Session
         .includes(:session_programme_year_groups)
         .has_date(Date.tomorrow)
         .joins(:location)
         .merge(Location.gias_school)
+        .ids
 
-    sessions.find_each do |session|
-      SendSchoolSessionRemindersJob.perform_later(session)
-    end
+    SendSchoolSessionRemindersJob.perform_bulk(session_ids.zip)
   end
 end

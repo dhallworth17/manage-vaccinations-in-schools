@@ -40,7 +40,7 @@ jobs:
     steps:
       - name: Send Slack notification about failed deployment
         if: needs.test.result == 'failure' || needs.deploy.result == 'failure'
-        uses: slackapi/slack-github-action@af78098f536edbc4de71162a307590698245be95
+        uses: slackapi/slack-github-action@03ea5433c137af7c0495bc0cad1af10403fc800c
         with:
           webhook: ${{ secrets.SLACK_MAVIS_TECH_WEBHOOK_URL }}
           webhook-type: incoming-webhook
@@ -57,7 +57,7 @@ jobs:
           # yamllint enable rule:line-length
       - name: Send Slack notification about failed E2E tests
         if: needs.end-to-end-tests.result == 'failure'
-        uses: slackapi/slack-github-action@af78098f536edbc4de71162a307590698245be95
+        uses: slackapi/slack-github-action@03ea5433c137af7c0495bc0cad1af10403fc800c
         with:
           webhook: ${{ secrets.SLACK_MAVIS_TECH_WEBHOOK_URL }}
           webhook-type: incoming-webhook

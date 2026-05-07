@@ -219,7 +219,7 @@ describe "Flu vaccination" do
   def when_i_record_that_the_patient_has_been_vaccinated_with_nasal_spray(
     check_injection_first: false
   )
-    within all("form")[3] do
+    within all("form")[2] do
       within all("fieldset")[0] do
         choose "Yes" # confirmed identity
       end
@@ -250,7 +250,7 @@ describe "Flu vaccination" do
   end
 
   def when_i_record_that_the_patient_has_been_vaccinated_with_injection
-    within all("form")[3] do
+    within all("form")[2] do
       within all("fieldset")[1] do
         check "I have checked that the above statements are true"
       end
@@ -268,7 +268,7 @@ describe "Flu vaccination" do
   end
 
   def when_i_record_that_the_patient_has_been_vaccinated_with_injection_instead
-    within all("form")[3] do
+    within all("form")[2] do
       within all("fieldset")[1] do
         check "I have checked that the above statements are true"
       end
@@ -339,7 +339,7 @@ describe "Flu vaccination" do
   end
 
   def when_vaccination_confirmations_are_sent
-    SendVaccinationConfirmationsJob.perform_now
+    SendVaccinationConfirmationsJob.new.perform
   end
 
   def then_an_email_is_sent_to_the_parent_confirming_the_vaccination

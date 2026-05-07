@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 describe EnqueueSchoolConsentRemindersJob do
-  subject(:perform_now) { described_class.perform_now }
+  subject(:perform) { described_class.new.perform }
 
   let(:programmes) { [Programme.sample] }
   let(:team) { create(:team, programmes:) }
@@ -27,7 +27,7 @@ describe EnqueueSchoolConsentRemindersJob do
     let(:today) { dates.first - 2.weeks }
 
     it "doesn't queue any jobs" do
-      expect { perform_now }.not_to have_enqueued_job(
+      expect { perform }.not_to enqueue_sidekiq_job(
         SendAutomaticSchoolConsentRemindersJob
       )
     end
@@ -37,16 +37,16 @@ describe EnqueueSchoolConsentRemindersJob do
     let(:today) { dates.first - 1.week }
 
     it "queues a job for the session" do
-      expect { perform_now }.to have_enqueued_job(
+      expect { perform }.to enqueue_sidekiq_job(
         SendAutomaticSchoolConsentRemindersJob
-      ).with(session)
+      ).with(session.id)
     end
 
     context "when location is a generic clinic" do
       let(:location) { create(:generic_clinic, team:) }
 
       it "doesn't queue any jobs" do
-        expect { perform_now }.not_to have_enqueued_job(
+        expect { perform }.not_to enqueue_sidekiq_job(
           SendAutomaticSchoolConsentRemindersJob
         )
       end
@@ -57,16 +57,16 @@ describe EnqueueSchoolConsentRemindersJob do
     let(:today) { dates.last - 1.week }
 
     it "queues a job for the session" do
-      expect { perform_now }.to have_enqueued_job(
+      expect { perform }.to enqueue_sidekiq_job(
         SendAutomaticSchoolConsentRemindersJob
-      ).with(session)
+      ).with(session.id)
     end
 
     context "when location is a generic clinic" do
       let(:location) { create(:generic_clinic, team:) }
 
       it "doesn't queue any jobs" do
-        expect { perform_now }.not_to have_enqueued_job(
+        expect { perform }.not_to enqueue_sidekiq_job(
           SendAutomaticSchoolConsentRemindersJob
         )
       end

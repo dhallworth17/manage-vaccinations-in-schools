@@ -1528,7 +1528,7 @@ describe FHIRMapper::VaccinationRecord do
         its(:batch_expiry) { should eq Date.new(2025, 12, 9) }
 
         its(:vaccine) do
-          should have_attributes(snomed_product_code: "7374511000001107")
+          should have_attributes(snomed_product_code: "7374311000001101")
         end
 
         its(:performed_at) { should eq Time.parse("2025-11-03T15:31:37+00:00") }
@@ -1565,12 +1565,11 @@ describe FHIRMapper::VaccinationRecord do
         its(:nhs_immunisations_api_snomed_reason_term) { should be_nil }
 
         its(:nhs_immunisations_api_snomed_product_code) do
-          should eq "7374511000001107"
+          should eq "7374311000001101"
         end
 
         its(:nhs_immunisations_api_snomed_product_term) do
-          should eq "Revaxis vaccine suspension for injection 0.5ml pre-filled syringes (Sanofi) " \
-                      "1 pre-filled disposable injection (product)"
+          should eq "Revaxis vaccine suspension for injection 0.5ml pre-filled syringes (Sanofi)"
         end
 
         its(:notes) { should include("Reported dose number string: Unknown") }

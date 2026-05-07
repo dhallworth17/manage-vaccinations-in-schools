@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class ProcessPatientChangesetJob < ApplicationJob
-  queue_as :imports
+  sidekiq_options queue: :imports
 
   def perform(patient_changeset_id)
     patient_changeset = PatientChangeset.find(patient_changeset_id)
@@ -28,7 +28,7 @@ class ProcessPatientChangesetJob < ApplicationJob
       return if import.changesets_are_invalid?
     end
 
-    ReviewPatientChangesetJob.perform_later(patient_changeset.id)
+    ReviewPatientChangesetJob.perform_async(patient_changeset.id)
   end
 
   private

@@ -41,8 +41,8 @@
           "coding": [
             {
               "system": "http://snomed.info/sct",
-              "code": "7374511000001107",
-              "display": "Revaxis vaccine suspension for injection 0.5ml pre-filled syringes (Sanofi) 1 pre-filled disposable injection (product)"
+              "code": "7374311000001101",
+              "display": "Revaxis vaccine suspension for injection 0.5ml pre-filled syringes (Sanofi)"
             }
           ]
         },

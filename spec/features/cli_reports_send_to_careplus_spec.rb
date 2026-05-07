@@ -38,7 +38,7 @@ describe "mavis reports send-to-careplus" do
 
         expect(WebMock).to have_requested(:post, default_endpoint).with(
           headers: {
-            "Content-Type" => "text/xml; charset=utf-8"
+            "Content-Type" => "application/xml"
           },
           body: /col1,col2/
         )
@@ -46,7 +46,7 @@ describe "mavis reports send-to-careplus" do
           body: /mavis_user/
         )
         expect(WebMock).to have_requested(:post, default_endpoint).with(
-          body: %r{careplus\.syhapp\.thirdparty\.nhs\.uk/MOCK/webservices}
+          body: %r{http://careplus\.syhapp\.thirdparty\.nhs\.uk}
         )
       end
     end
@@ -115,7 +115,7 @@ describe "mavis reports send-to-careplus" do
         )
 
         then_the_error_output_includes(
-          "does not have CarePlus credentials configured"
+          "needs the CarePlus username, password, and namespace configured to send reports."
         )
         and_no_request_was_made
       end
@@ -135,7 +135,7 @@ describe "mavis reports send-to-careplus" do
           body: /careplus_user/
         )
         expect(WebMock).to have_requested(:post, default_endpoint).with(
-          body: %r{careplus\.syhapp\.thirdparty\.nhs\.uk/MOCK/webservices}
+          body: %r{http://careplus\.syhapp\.thirdparty\.nhs\.uk}
         )
         then_the_output_includes("Success (HTTP 200)")
       end
@@ -155,6 +155,9 @@ describe "mavis reports send-to-careplus" do
         expect(WebMock).to have_requested(:post, default_endpoint).with(
           body: /careplus_user/
         )
+        expect(WebMock).to have_requested(:post, default_endpoint).with(
+          body: %r{http://careplus\.syhapp\.thirdparty\.nhs\.uk}
+        )
       end
     end
   end
@@ -163,7 +166,7 @@ describe "mavis reports send-to-careplus" do
 
   def default_endpoint
     fallback_namespace = MavisCLI::Reports::SendToCareplus::FALLBACK_NAMESPACE
-    "#{Settings.careplus.base_url}/#{fallback_namespace}/soap.SchImms.cls"
+    "#{Settings.careplus.base_url}/#{fallback_namespace}/soap.SCHImms.cls"
   end
 
   def stub_careplus_request(endpoint: default_endpoint, status: 200, body: "")

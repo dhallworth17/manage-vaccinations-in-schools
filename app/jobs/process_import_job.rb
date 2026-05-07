@@ -3,9 +3,11 @@
 class ProcessImportJob < ApplicationJob
   include SingleConcurrencyConcern
 
-  queue_as :imports
+  sidekiq_options queue: :imports
 
-  def perform(import)
+  def perform(import_global_id)
+    import = GlobalID::Locator.locate(import_global_id)
+
     return if import.processed?
 
     SemanticLogger.tagged(import_id: import.id) do

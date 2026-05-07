@@ -121,6 +121,7 @@ Rails.application.routes.draw do
         get "refresh-reporting", to: "refresh_reporting#create"
         post "vaccinations-search-in-nhs",
              to: "vaccinations_search_in_nhs#create"
+        get "vaccinations-search-in-nhs", to: "vaccinations_search_in_nhs#show"
       end
     end
 
@@ -325,7 +326,7 @@ Rails.application.routes.draw do
       resources :programmes, path: "", param: :type, only: :show do
         get "record-already-vaccinated"
 
-        resources :consents, only: %i[index create show] do
+        resources :consents, only: %i[index new show] do
           post "send-request", on: :collection, action: :send_request
 
           member do

@@ -3,9 +3,11 @@
 class SendSchoolConsentRequestsJob < ApplicationJob
   include SendSchoolConsentNotificationConcern
 
-  queue_as :notifications
+  sidekiq_options queue: :notifications
 
-  def perform(session)
+  def perform(session_id)
+    session = Session.find(session_id)
+
     patients_and_programmes(session) do |patient, programmes|
       patient.notifier.send_consent_request(programmes, session:, sent_by: nil)
     end

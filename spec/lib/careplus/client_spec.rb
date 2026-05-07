@@ -10,7 +10,7 @@ describe Careplus::Client do
   let(:password) { "test_password" }
   let(:namespace) { "TEST" }
   let(:payload) { "col1,col2\nval1,val2\n" }
-  let(:endpoint_path) { "/#{namespace}/soap.SchImms.cls" }
+  let(:endpoint_path) { "/#{namespace}/soap.SCHImms.cls" }
   let(:full_url) { "#{base_url}#{endpoint_path}" }
 
   before do
@@ -30,7 +30,7 @@ describe Careplus::Client do
     response
     expect(WebMock).to have_requested(:post, full_url).with(
       headers: {
-        "Content-Type" => "text/xml; charset=utf-8"
+        "Content-Type" => "application/xml"
       }
     )
   end
@@ -52,10 +52,10 @@ describe Careplus::Client do
     expect(WebMock).to have_requested(:post, full_url).with(body: /col1,col2/)
   end
 
-  it "uses the namespace in the SOAP target namespace URI" do
+  it "uses the Careplus SOAP target namespace URI" do
     response
     expect(WebMock).to have_requested(:post, full_url).with(
-      body: %r{careplus\.syhapp\.thirdparty\.nhs\.uk/TEST/webservices}
+      body: %r{http://careplus\.syhapp\.thirdparty\.nhs\.uk}
     )
   end
 

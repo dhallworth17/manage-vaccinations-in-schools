@@ -3,14 +3,14 @@
 class GIASImportJob < ApplicationJob
   include SingleConcurrencyConcern
 
-  queue_as :third_party_data_imports
+  sidekiq_options queue: :third_party_data_imports
 
-  def perform(dry_run: false)
+  def perform
     GIAS.download
 
     results = GIAS.check_import
     GIAS.log_import_check_results(results)
 
-    GIAS.import unless dry_run
+    GIAS.import
   end
 end

@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 describe PatientNHSNumberLookupJob do
-  subject(:perform_now) { described_class.perform_now(patient) }
+  subject(:perform) { described_class.new.perform(patient.id) }
 
   let(:programme) { Programme.sample }
 
@@ -14,7 +14,7 @@ describe PatientNHSNumberLookupJob do
     let(:patient) { create(:patient, nhs_number: "0123456789") }
 
     it "doesn't change the NHS number" do
-      expect { perform_now }.not_to change(patient, :nhs_number)
+      expect { perform }.not_to change(patient, :nhs_number)
     end
   end
 
@@ -43,29 +43,33 @@ describe PatientNHSNumberLookupJob do
       let(:response_file) { "pds/search-patients-no-results-response.json" }
 
       it "doesn't change the NHS number" do
-        expect { perform_now }.not_to change(patient, :nhs_number)
+        expect { perform }.not_to change(patient, :nhs_number)
       end
     end
 
     context "with a match" do
       let(:response_file) { "pds/search-patients-response.json" }
 
+      before do
+        allow(Patient).to receive(:find).with(patient.id).and_return(patient)
+      end
+
       it "sets the NHS number of the patient" do
-        expect { perform_now }.to change(patient, :nhs_number).to("9449306168")
+        expect { perform }.to change(patient, :nhs_number).to("9449306168")
       end
 
       it "marks the patient as not invalidated" do
-        perform_now
+        perform
         expect(patient).not_to be_invalidated
       end
 
       it "updates the patient details from PDS" do
         expect(patient).to receive(:update_from_pds!)
-        perform_now
+        perform
       end
 
       it "creates a PDSSearchResult" do
-        expect { perform_now }.to change(PDSSearchResult, :count).by(1)
+        expect { perform }.to change(PDSSearchResult, :count).by(1)
         expect(PDSSearchResult.last.step).to eq("no_fuzzy_with_history_daily")
         expect(PDSSearchResult.last.result).to eq("one_match")
         expect(PDSSearchResult.last.nhs_number).to eq("9449306168")
@@ -90,23 +94,23 @@ describe PatientNHSNumberLookupJob do
       context "when the existing patient is not already in the session" do
         it "deletes the patient without an NHS number" do
           patient # ensure it exists
-          expect { perform_now }.to change(Patient, :count).by(-1)
+          expect { perform }.to change(Patient, :count).by(-1)
         end
 
         it "moves the gillick assessments" do
-          expect { perform_now }.to change {
+          expect { perform }.to change {
             gillick_assessment.reload.patient
           }.from(patient).to(existing_patient)
         end
 
         it "moves the triages" do
-          expect { perform_now }.to change { triage.reload.patient }.from(
+          expect { perform }.to change { triage.reload.patient }.from(
             patient
           ).to(existing_patient)
         end
 
         it "moves the vaccination records" do
-          expect { perform_now }.to change {
+          expect { perform }.to change {
             vaccination_record.reload.patient
           }.from(patient).to(existing_patient)
         end
@@ -123,23 +127,23 @@ describe PatientNHSNumberLookupJob do
         end
 
         it "deletes the patient without an NHS number" do
-          expect { perform_now }.to change(Patient, :count).by(-1)
+          expect { perform }.to change(Patient, :count).by(-1)
         end
 
         it "moves the gillick assessments" do
-          expect { perform_now }.to change {
+          expect { perform }.to change {
             gillick_assessment.reload.patient
           }.from(patient).to(existing_patient)
         end
 
         it "moves the triages" do
-          expect { perform_now }.to change { triage.reload.patient }.from(
+          expect { perform }.to change { triage.reload.patient }.from(
             patient
           ).to(existing_patient)
         end
 
         it "moves the vaccination records" do
-          expect { perform_now }.to change {
+          expect { perform }.to change {
             vaccination_record.reload.patient
           }.from(patient).to(existing_patient)
         end

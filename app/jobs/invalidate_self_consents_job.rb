@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class InvalidateSelfConsentsJob < ApplicationJob
-  queue_as :consents
+  sidekiq_options queue: :consents
 
   def perform
     programmes = Programme.all
